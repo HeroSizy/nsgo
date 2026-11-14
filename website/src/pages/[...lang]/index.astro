@@ -8,10 +8,6 @@ import { copies } from '../../copy';
 import Layout from '../../layouts/Layout.astro';
 import { docUrl, langOf, langPaths, links, pageUrl, platformName, platformRows, platforms, platformsOf, shown } from '../../site';
 import { goApp, goTest, tsxApp } from '../../snippets';
-import desktopEn from '../../assets/screens/desktop-en.jpg';
-import desktopZh from '../../assets/screens/desktop-zh.jpg';
-import phoneEn from '../../assets/screens/phone-en.jpg';
-import phoneZh from '../../assets/screens/phone-zh.jpg';
 
 export const getStaticPaths = () => langPaths('home');
 
@@ -19,8 +15,19 @@ const lang = langOf(Astro.params.lang);
 const copy = copies[lang];
 const home = copy.home;
 const f = home.features;
-const desktop = lang === 'zh' ? desktopZh : desktopEn;
-const phone = lang === 'zh' ? phoneZh : phoneEn;
+
+// The gallery's screens, <layout>-<lang>-<theme>.jpg from `bun run
+// screenshots`; the page holds both appearances and shows the one in use.
+const screenFiles = import.meta.glob<{ default: ImageMetadata }>('../../assets/screens/*.jpg', { eager: true });
+const themes = ['light', 'dark'] as const;
+const screens = (layout: 'desktop' | 'phone') =>
+  themes.map((theme) => {
+    const file = screenFiles[`../../assets/screens/${layout}-${lang}-${theme}.jpg`];
+    if (!file) throw new Error(`src/assets/screens/${layout}-${lang}-${theme}.jpg is missing: run \`bun run screenshots\``);
+    return { theme, image: file.default };
+  });
+const desktop = screens('desktop');
+const phone = screens('phone');
 
 // Where each platform's tile sits beside the hero's copy, in points of a
 // 480 by 300 board, and the shape of the device or surface it runs on. The
@@ -117,10 +124,14 @@ const next: { icon: IconName; title: string; body: string; href: string; externa
 
     <div class="container stage">
       <figure class="screen">
-        <img src={desktop.src} width={desktop.width} height={desktop.height} alt={home.hero.desktopAlt} />
+        {desktop.map(({ theme, image }) => (
+          <img src={image.src} width={image.width} height={image.height} alt={home.hero.desktopAlt} data-screen-theme={theme} loading="lazy" />
+        ))}
       </figure>
       <figure class="phone">
-        <img src={phone.src} width={phone.width} height={phone.height} alt={home.hero.phoneAlt} />
+        {phone.map(({ theme, image }) => (
+          <img src={image.src} width={image.width} height={image.height} alt={home.hero.phoneAlt} data-screen-theme={theme} loading="lazy" />
+        ))}
       </figure>
     </div>
   </section>

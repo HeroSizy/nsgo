@@ -1,15 +1,17 @@
 // Takes the home page's screenshots of the gallery from its web build:
-// the desktop layout and the phone layout, in English and Chinese, into
-// src/assets/screens/. Run `bun run gallery` first; it needs Google Chrome
+// the desktop layout and the phone layout, in every language of the site
+// and in light and dark, into src/assets/screens/ as
+// <layout>-<lang>-<theme>.jpg. Run `bun run gallery` first; it needs Google Chrome
 // and macOS's sips.
 //
 // The gallery is served from public/gallery/ and driven through Chrome's
 // DevTools protocol, which waits for the wasm to start before capturing.
 import { execFileSync, spawn } from 'node:child_process';
-import { existsSync, mkdtempSync, rmSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, readdirSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { langs } from '../src/site.ts';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const website = path.resolve(here, '..');
@@ -27,7 +29,8 @@ const server = Bun.serve({
   port: 0,
   async fetch(request) {
     const { pathname } = new URL(request.url);
-    const file = Bun.file(path.join(publicDir, decodeURIComponent(pathname.replace(/^\//, ''))));
+    const name = decodeURIComponent(pathname.replace(/^\//, '')).replace(/(^|\/)$/, '$1index.html');
+    const file = Bun.file(path.join(publicDir, name));
     return (await file.exists()) ? new Response(file) : new Response('Not found', { status: 404 });
   },
 });
@@ -36,7 +39,13 @@ const shots = [
   { name: 'desktop', width: 1440, height: 900, mobile: false, resize: ['-Z', '1800'], quality: '82' },
   { name: 'phone', width: 390, height: 844, mobile: true, resize: [], quality: '85' },
 ];
-const locales = { en: 'en-US', zh: 'zh-CN' };
+// Each site language's browser locale and the gallery's own (--nsgo-lang).
+const locales = { en: { browser: 'en-US', app: 'en' }, zh: { browser: 'zh-CN', app: 'zh-Hans' } };
+const themes = ['light', 'dark'];
+const missing = langs.filter((lang) => !locales[lang]);
+if (missing.length) throw new Error(`no locale for ${missing.join(', ')}: add it to scripts/screenshots.mjs`);
+// Captures at once, each with its own Chrome; more starve the wasm of CPU.
+const parallel = 4;
 
 async function capture(url, shot, locale, out, port) {
   const profile = mkdtempSync(path.join(tmpdir(), 'nsgo-shot-'));
@@ -89,18 +98,40 @@ async function capture(url, shot, locale, out, port) {
     rmSync(png);
     socket.close();
   } finally {
+    // Free the debugging port for the slot's next capture.
+    const exited = new Promise((resolve) => browser.once('exit', resolve));
     browser.kill();
+    await exited;
     rmSync(profile, { recursive: true, force: true });
   }
 }
 
 try {
-  const url = `http://localhost:${server.port}/gallery/?theme=light`;
-  // Each capture runs its own Chrome on its own debugging port.
-  const jobs = Object.entries(locales).flatMap(([lang, locale]) =>
-    shots.map((shot) => ({ shot, locale, out: path.join(outDir, `${shot.name}-${lang}.jpg`) })),
+  mkdirSync(outDir, { recursive: true });
+  for (const file of readdirSync(outDir)) if (file.endsWith('.jpg')) rmSync(path.join(outDir, file));
+  const jobs = langs.flatMap((lang) =>
+    themes.flatMap((theme) =>
+      shots.map((shot) => {
+        const query = new URLSearchParams({ theme, 'nsgo-lang': locales[lang].app, 'nsgo-appearance': theme });
+        return {
+          url: `http://localhost:${server.port}/gallery/?${query}`,
+          shot,
+          locale: locales[lang].browser,
+          out: path.join(outDir, `${shot.name}-${lang}-${theme}.jpg`),
+        };
+      }),
+    ),
   );
-  await Promise.all(jobs.map((job, index) => capture(url, job.shot, job.locale, job.out, 9320 + index)));
+  // Each capture runs its own Chrome on its own debugging port.
+  let next = 0;
+  const worker = async (slot) => {
+    while (next < jobs.length) {
+      const job = jobs[next++];
+      await capture(job.url, job.shot, job.locale, job.out, 9320 + slot);
+      console.log(path.relative(website, job.out));
+    }
+  };
+  await Promise.all(Array.from({ length: parallel }, (_, slot) => worker(slot)));
   console.log(`Screenshots written to ${path.relative(website, outDir)}/`);
 } finally {
   server.stop(true);

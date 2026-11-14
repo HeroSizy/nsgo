@@ -825,7 +825,14 @@ html[data-theme-preference='system'] .theme-menu__icon--system {
   }
 }
 
-/* The gallery's screens: a desktop window and a phone before it. */
+/* The gallery's screens: a desktop window and a phone before it, each in
+   both appearances, of which the page's shows. A hidden lazy image is never
+   fetched. */
+
+html:not([data-theme='dark']) [data-screen-theme='dark'],
+html[data-theme='dark'] [data-screen-theme='light'] {
+  display: none;
+}
 
 .stage {
   position: relative;

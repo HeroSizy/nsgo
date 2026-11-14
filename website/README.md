@@ -127,9 +127,12 @@ screens of the gallery show what NSGo makes. The tokens and layout are in
 `src/styles/global.css`.
 
 The home page's screens are `src/assets/screens/`, the gallery's desktop
-and phone layouts in English and Chinese. `bun run screenshots` retakes
-them from `public/gallery/` (run `bun run gallery` first) with Google
-Chrome and macOS's `sips`; retake them when the gallery's look changes.
+and phone layouts in each of `src/site.ts`'s languages and in light and
+dark, named `<layout>-<lang>-<theme>.jpg`; the page shows the pair in the
+site's appearance. `bun run screenshots` retakes them all from
+`public/gallery/` (run `bun run gallery` first) with Google Chrome and
+macOS's `sips`; retake them when the gallery's look changes or a language
+is added, giving it a locale in `scripts/screenshots.mjs`.
 
 ## Docs: goals
 
