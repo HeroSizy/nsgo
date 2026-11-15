@@ -61,8 +61,8 @@ Keep the workflows that build or test code, `test.yml` and `codeql.yml`, on `wor
 - Update a document only when a fact its reader needs changes.
 - Avoid secondary labels and descriptions that restate a heading or value; let the layout explain.
 - Keep each document within its budget and written for its reader.
-- Record completed user-visible outcomes as one-clause `Unreleased` bullets with references such as `(#12 by @alice)`, ordered by type and merging related ones.
-- Until the first release, keep `Unreleased` as the first version's notes: a handful of capability bullets, refined in place, never fixes or changes to unreleased work.
+- Leave `CHANGELOG.md` as it is until 0.1.0 ships: its `Unreleased` already holds the first version's notes, NSGo's traits, then its features without references, then thanks to everyone who took part (decided by the user, 2026-11-15).
+- After 0.1.0, record completed user-visible outcomes as one-clause `Unreleased` bullets with references such as `(#12 by @alice)`, ordered by type and merging related ones.
 - Repair documents you touch instead of only appending to them.
 - Keep `docs/public/` and `skills/nsgo/` current with the code: when what an app writes, the tool's commands and flags, testing, packaging or a rule above that app authors share changes, update the public docs and the skill in the same change. The skill, which agents install with `bunx skills add nsgo-dev/nsgo`, holds only what an agent needs to follow and links the docs for the rest; `skills_test.go` checks the names it mentions, and the website generates `llms.txt` from `docs/public/en/`.
 - Keep `README.md` and `README.zh-CN.md` equivalent; everything else, including code comments, is English.
