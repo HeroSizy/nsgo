@@ -23,8 +23,14 @@
 </p>
 
 <p align="center">
-  <img src="website/src/assets/screens/desktop-en.jpg" alt="The gallery's Stocks demo on macOS" width="75%">
-  <img src="website/src/assets/screens/phone-en.jpg" alt="The gallery's component list on a phone" width="21.6%">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="website/src/assets/screens/desktop-en-dark.jpg">
+    <img src="website/src/assets/screens/desktop-en-light.jpg" alt="The gallery's Stocks demo on macOS" width="75%">
+  </picture>
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="website/src/assets/screens/phone-en-dark.jpg">
+    <img src="website/src/assets/screens/phone-en-light.jpg" alt="The gallery's component list on a phone" width="21.6%">
+  </picture>
 </p>
 
 ## Status

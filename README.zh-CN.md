@@ -23,8 +23,14 @@
 </p>
 
 <p align="center">
-  <img src="website/src/assets/screens/desktop-zh.jpg" alt="macOS 上 gallery 的 Stocks 示例" width="75%">
-  <img src="website/src/assets/screens/phone-zh.jpg" alt="手机上 gallery 的组件列表" width="21.6%">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="website/src/assets/screens/desktop-zh-dark.jpg">
+    <img src="website/src/assets/screens/desktop-zh-light.jpg" alt="macOS 上 gallery 的 Stocks 示例" width="75%">
+  </picture>
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="website/src/assets/screens/phone-zh-dark.jpg">
+    <img src="website/src/assets/screens/phone-zh-light.jpg" alt="手机上 gallery 的组件列表" width="21.6%">
+  </picture>
 </p>
 
 ## 状态
