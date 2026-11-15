@@ -182,7 +182,7 @@ func init() {
 	tsx.Register(module, map[string]core.Node{"DockArea": ui.DockArea{}}, append(tsx.DockOptions(), tsx.SandboxSafe())...)
 	tsx.Register(module, map[string]core.Node{"DockTabLabel": ui.DockTabLabel{}}, options()...)
 	tsx.Register(module, map[string]core.Node{"CommitGraph": commitgraph.View{}}, options(tsx.Omit("Selection"), tsx.Event("OnActivate", "commit"))...)
-	tsx.Register(module, map[string]core.Node{"Flow": uiflow.View{}}, options(tsx.Omit("State"), tsx.Event("OnSelect", "id"), tsx.Event("OnOpen", "id"))...)
+	tsx.Register(module, map[string]core.Node{"Flow": uiflow.View{}}, options(tsx.Omit("State", "Camera"), tsx.Event("OnSelect", "id"), tsx.Event("OnOpen", "id"))...)
 	tsx.Register(module, map[string]core.Node{"FlowCard": uiflow.Card{}}, options()...)
 	tsx.Register(module, map[string]core.Node{"DiffView": uidiff.View{}}, append(tsxdiff.Options(), tsx.SandboxSafe())...)
 	tsx.Register(module, map[string]core.Node{"TextView": ui.TextView{}}, append(tsxtextview.Options(), tsx.Omit("StyleOf"), tsx.SandboxSafe())...)

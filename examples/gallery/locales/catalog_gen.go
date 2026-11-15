@@ -2665,6 +2665,27 @@ const (
 	textPermissionReminders
 	textPermissionBluetooth
 	textPermissionMediaLibrary
+	textDemoCamera
+	textDemoCameraDetail
+	textCameraLabel
+	textCameraZoom
+	textCameraPointer
+	textCameraFitSelection
+	textCameraSignIn
+	textCameraMenu
+	textCameraCart
+	textCameraCheckout
+	textCameraWelcome
+	textCameraEmail
+	textCameraContinue
+	textCameraLatte
+	textCameraFlatWhite
+	textCameraColdBrew
+	textCameraTotal
+	textCameraPay
+	textCameraPick
+	textCameraReady
+	textCameraDeclined
 	numTexts
 )
 
@@ -4908,6 +4929,27 @@ var keyOfText = [numTexts]string{
 	"permissionReminders",
 	"permissionBluetooth",
 	"permissionMediaLibrary",
+	"demoCamera",
+	"demoCameraDetail",
+	"cameraLabel",
+	"cameraZoom",
+	"cameraPointer",
+	"cameraFitSelection",
+	"cameraSignIn",
+	"cameraMenu",
+	"cameraCart",
+	"cameraCheckout",
+	"cameraWelcome",
+	"cameraEmail",
+	"cameraContinue",
+	"cameraLatte",
+	"cameraFlatWhite",
+	"cameraColdBrew",
+	"cameraTotal",
+	"cameraPay",
+	"cameraPick",
+	"cameraReady",
+	"cameraDeclined",
 }
 
 // textsEn are the messages without arguments in en.
@@ -7148,7 +7190,28 @@ var textsEn = i18n.NewTexts(""+
 	"Calendars"+
 	"Reminders"+
 	"Bluetooth"+
-	"Media & Apple Music",
+	"Media & Apple Music"+
+	"Camera"+
+	"A board the page lays out itself, panned and zoomed on a camera, with its own toolbar and a flow diagram among its screens"+
+	"A board of screens and the checkout flow. Drag to pan, and use the wheel or pinch to zoom."+
+	"Zoom"+
+	"Pointer"+
+	"Fit the selection"+
+	"Sign in"+
+	"Menu"+
+	"Cart"+
+	"Checkout"+
+	"Welcome back"+
+	"you@example.com"+
+	"Continue"+
+	"Latte"+
+	"Flat white"+
+	"Cold brew"+
+	"Total $4.20"+
+	"Pay"+
+	"Pick a drink"+
+	"Collect at the counter"+
+	"declined",
 	[]uint16{
 		7,
 		7,
@@ -9387,6 +9450,27 @@ var textsEn = i18n.NewTexts(""+
 		9,
 		9,
 		19,
+		6,
+		122,
+		90,
+		4,
+		7,
+		17,
+		7,
+		4,
+		4,
+		8,
+		12,
+		15,
+		8,
+		5,
+		10,
+		9,
+		11,
+		3,
+		12,
+		22,
+		8,
 	})
 
 // textsZhHans are the messages without arguments in zh-Hans.
@@ -11627,7 +11711,28 @@ var textsZhHans = i18n.NewTexts(""+
 	"日历"+
 	"提醒事项"+
 	"蓝牙"+
-	"媒体与Apple Music",
+	"媒体与Apple Music"+
+	"画布"+
+	"页面自己排布的画板，放在可平移缩放的相机上，带自己的工具栏，界面之间还有一张流程图"+
+	"包含几个界面和结账流程的画板。拖动平移，滚轮或捏合缩放。"+
+	"缩放"+
+	"指针"+
+	"适配所选"+
+	"登录"+
+	"菜单"+
+	"购物车"+
+	"结账"+
+	"欢迎回来"+
+	"you@example.com"+
+	"继续"+
+	"拿铁"+
+	"馥芮白"+
+	"冷萃"+
+	"合计 ¥29"+
+	"支付"+
+	"选择饮品"+
+	"到柜台取餐"+
+	"被拒",
 	[]uint16{
 		6,
 		6,
@@ -13866,6 +13971,27 @@ var textsZhHans = i18n.NewTexts(""+
 		12,
 		6,
 		20,
+		6,
+		123,
+		84,
+		6,
+		6,
+		12,
+		6,
+		6,
+		9,
+		6,
+		12,
+		15,
+		6,
+		6,
+		9,
+		6,
+		11,
+		6,
+		12,
+		15,
+		6,
 	})
 
 // texts returns the messages without arguments in lang, nil for a
@@ -35678,3 +35804,150 @@ func PermissionMediaLibrary(cx *core.Scope) string { return For(cx).PermissionMe
 
 // PermissionMediaLibrary is the package's PermissionMediaLibrary in the language of msgs.
 func (msgs Messages) PermissionMediaLibrary() string { return msgs.text(textPermissionMediaLibrary) }
+
+// DemoCamera says "Camera"
+// in the language the app shows under cx.
+func DemoCamera(cx *core.Scope) string { return For(cx).DemoCamera() }
+
+// DemoCamera is the package's DemoCamera in the language of msgs.
+func (msgs Messages) DemoCamera() string { return msgs.text(textDemoCamera) }
+
+// DemoCameraDetail says "A board the page lays out itself, panned and zoomed on a camera, with its own toolbar and a flow diagram among its screens"
+// in the language the app shows under cx.
+func DemoCameraDetail(cx *core.Scope) string { return For(cx).DemoCameraDetail() }
+
+// DemoCameraDetail is the package's DemoCameraDetail in the language of msgs.
+func (msgs Messages) DemoCameraDetail() string { return msgs.text(textDemoCameraDetail) }
+
+// CameraLabel says "A board of screens and the checkout flow. Drag to pan, and use the wheel or pinch to zoom."
+// in the language the app shows under cx.
+func CameraLabel(cx *core.Scope) string { return For(cx).CameraLabel() }
+
+// CameraLabel is the package's CameraLabel in the language of msgs.
+func (msgs Messages) CameraLabel() string { return msgs.text(textCameraLabel) }
+
+// CameraZoom says "Zoom"
+// in the language the app shows under cx.
+func CameraZoom(cx *core.Scope) string { return For(cx).CameraZoom() }
+
+// CameraZoom is the package's CameraZoom in the language of msgs.
+func (msgs Messages) CameraZoom() string { return msgs.text(textCameraZoom) }
+
+// CameraPointer says "Pointer"
+// in the language the app shows under cx.
+func CameraPointer(cx *core.Scope) string { return For(cx).CameraPointer() }
+
+// CameraPointer is the package's CameraPointer in the language of msgs.
+func (msgs Messages) CameraPointer() string { return msgs.text(textCameraPointer) }
+
+// CameraFitSelection says "Fit the selection"
+// in the language the app shows under cx.
+func CameraFitSelection(cx *core.Scope) string { return For(cx).CameraFitSelection() }
+
+// CameraFitSelection is the package's CameraFitSelection in the language of msgs.
+func (msgs Messages) CameraFitSelection() string { return msgs.text(textCameraFitSelection) }
+
+// CameraSignIn says "Sign in"
+// in the language the app shows under cx.
+func CameraSignIn(cx *core.Scope) string { return For(cx).CameraSignIn() }
+
+// CameraSignIn is the package's CameraSignIn in the language of msgs.
+func (msgs Messages) CameraSignIn() string { return msgs.text(textCameraSignIn) }
+
+// CameraMenu says "Menu"
+// in the language the app shows under cx.
+func CameraMenu(cx *core.Scope) string { return For(cx).CameraMenu() }
+
+// CameraMenu is the package's CameraMenu in the language of msgs.
+func (msgs Messages) CameraMenu() string { return msgs.text(textCameraMenu) }
+
+// CameraCart says "Cart"
+// in the language the app shows under cx.
+func CameraCart(cx *core.Scope) string { return For(cx).CameraCart() }
+
+// CameraCart is the package's CameraCart in the language of msgs.
+func (msgs Messages) CameraCart() string { return msgs.text(textCameraCart) }
+
+// CameraCheckout says "Checkout"
+// in the language the app shows under cx.
+func CameraCheckout(cx *core.Scope) string { return For(cx).CameraCheckout() }
+
+// CameraCheckout is the package's CameraCheckout in the language of msgs.
+func (msgs Messages) CameraCheckout() string { return msgs.text(textCameraCheckout) }
+
+// CameraWelcome says "Welcome back"
+// in the language the app shows under cx.
+func CameraWelcome(cx *core.Scope) string { return For(cx).CameraWelcome() }
+
+// CameraWelcome is the package's CameraWelcome in the language of msgs.
+func (msgs Messages) CameraWelcome() string { return msgs.text(textCameraWelcome) }
+
+// CameraEmail says "you@example.com"
+// in the language the app shows under cx.
+func CameraEmail(cx *core.Scope) string { return For(cx).CameraEmail() }
+
+// CameraEmail is the package's CameraEmail in the language of msgs.
+func (msgs Messages) CameraEmail() string { return msgs.text(textCameraEmail) }
+
+// CameraContinue says "Continue"
+// in the language the app shows under cx.
+func CameraContinue(cx *core.Scope) string { return For(cx).CameraContinue() }
+
+// CameraContinue is the package's CameraContinue in the language of msgs.
+func (msgs Messages) CameraContinue() string { return msgs.text(textCameraContinue) }
+
+// CameraLatte says "Latte"
+// in the language the app shows under cx.
+func CameraLatte(cx *core.Scope) string { return For(cx).CameraLatte() }
+
+// CameraLatte is the package's CameraLatte in the language of msgs.
+func (msgs Messages) CameraLatte() string { return msgs.text(textCameraLatte) }
+
+// CameraFlatWhite says "Flat white"
+// in the language the app shows under cx.
+func CameraFlatWhite(cx *core.Scope) string { return For(cx).CameraFlatWhite() }
+
+// CameraFlatWhite is the package's CameraFlatWhite in the language of msgs.
+func (msgs Messages) CameraFlatWhite() string { return msgs.text(textCameraFlatWhite) }
+
+// CameraColdBrew says "Cold brew"
+// in the language the app shows under cx.
+func CameraColdBrew(cx *core.Scope) string { return For(cx).CameraColdBrew() }
+
+// CameraColdBrew is the package's CameraColdBrew in the language of msgs.
+func (msgs Messages) CameraColdBrew() string { return msgs.text(textCameraColdBrew) }
+
+// CameraTotal says "Total $4.20"
+// in the language the app shows under cx.
+func CameraTotal(cx *core.Scope) string { return For(cx).CameraTotal() }
+
+// CameraTotal is the package's CameraTotal in the language of msgs.
+func (msgs Messages) CameraTotal() string { return msgs.text(textCameraTotal) }
+
+// CameraPay says "Pay"
+// in the language the app shows under cx.
+func CameraPay(cx *core.Scope) string { return For(cx).CameraPay() }
+
+// CameraPay is the package's CameraPay in the language of msgs.
+func (msgs Messages) CameraPay() string { return msgs.text(textCameraPay) }
+
+// CameraPick says "Pick a drink"
+// in the language the app shows under cx.
+func CameraPick(cx *core.Scope) string { return For(cx).CameraPick() }
+
+// CameraPick is the package's CameraPick in the language of msgs.
+func (msgs Messages) CameraPick() string { return msgs.text(textCameraPick) }
+
+// CameraReady says "Collect at the counter"
+// in the language the app shows under cx.
+func CameraReady(cx *core.Scope) string { return For(cx).CameraReady() }
+
+// CameraReady is the package's CameraReady in the language of msgs.
+func (msgs Messages) CameraReady() string { return msgs.text(textCameraReady) }
+
+// CameraDeclined says "declined"
+// in the language the app shows under cx.
+func CameraDeclined(cx *core.Scope) string { return For(cx).CameraDeclined() }
+
+// CameraDeclined is the package's CameraDeclined in the language of msgs.
+func (msgs Messages) CameraDeclined() string { return msgs.text(textCameraDeclined) }

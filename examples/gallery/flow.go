@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strconv"
 
+	"github.com/nsgo-dev/nsgo/base/camera"
 	baseflow "github.com/nsgo-dev/nsgo/base/flow"
 	"github.com/nsgo-dev/nsgo/core"
 	"github.com/nsgo-dev/nsgo/icons/lucide"
@@ -186,7 +187,7 @@ func (f flowCard) Render(cx *core.Scope) core.Node {
 }
 
 // flowShown is the camera of the page shown last, which tests read.
-var flowShown *uiflow.State
+var flowShown *camera.State
 
 // flowDemo is the plan filling the page, its toolbar over it, with its
 // options, what it reports and its base form in the panel.
@@ -194,8 +195,8 @@ func flowDemo(cx *core.Scope) core.Node {
 	tr := locales.For(cx)
 	colors := ui.ColorsOf(cx)
 	fin := ui.FinOf(cx)
-	state := &uiflow.State{}
-	flowShown = state
+	cam := &camera.State{}
+	flowShown = cam
 	selected, opened := core.NewSignal(cx, ""), core.NewSignal(cx, "")
 	leftToRight, empty := core.NewSignal(cx, false), core.NewSignal(cx, false)
 	added := core.NewSignalFunc(cx, []flowAddition(nil), func(a, b []flowAddition) bool { return len(a) == len(b) })
@@ -240,15 +241,15 @@ func flowDemo(cx *core.Scope) core.Node {
 					selected.Set("")
 				})
 			}},
-			tool(lucide.ZoomOut, tr.FlowZoomOut(), full, state.ZoomOut),
-			tool(lucide.ZoomIn, tr.FlowZoomIn(), full, state.ZoomIn),
-			tool(lucide.Scan, tr.FlowFit(), full, state.Fit),
+			tool(lucide.ZoomOut, tr.FlowZoomOut(), full, cam.ZoomOut),
+			tool(lucide.ZoomIn, tr.FlowZoomIn(), full, cam.ZoomIn),
+			tool(lucide.Scan, tr.FlowFit(), full, cam.Fit),
 		}}
 	return stagePage(cx,
 		core.View{StyleFunc: func() core.Style {
 			return fin.Card().Over(core.Style{FlexGrow: 1, FlexShrink: 1, MinHeight: core.Pt(0), CornerRadius: ui.RadiusInset,
 				BorderWidth: 1, BorderColor: colors.Border(), Background: colors.Background(), Overflow: core.Hidden})
-		}, Children: []core.Node{PixelGrid{Style: core.Style{FlexGrow: 1, MinHeight: core.Pt(0)}, Children: []core.Node{uiflow.View{TestID: "flow", State: state, Data: data, Direction: direction,
+		}, Children: []core.Node{PixelGrid{Style: core.Style{FlexGrow: 1, MinHeight: core.Pt(0)}, Children: []core.Node{uiflow.View{TestID: "flow", Camera: cam, Data: data, Direction: direction,
 			LabelFunc: func() string {
 				d := data()
 				return tr.FlowLabel(len(d.Nodes), len(d.Edges))
@@ -275,8 +276,8 @@ func dashIfEmpty(fn func() string) func() string {
 	}
 }
 
-// baseFlowForm is base's diagram in its simplest form: plain boxes in the
-// text's color and grays.
+// baseFlowForm is base's diagram in its simplest form, plain boxes in the
+// text's color and grays, on a camera that hands it the pointer.
 func baseFlowForm(cx *core.Scope) Form {
 	colors := ui.ColorsOf(cx)
 	box := func(title string) core.Node {
@@ -293,8 +294,10 @@ func baseFlowForm(cx *core.Scope) Form {
 	return Form{Name: "flow.View", Fill: true, Stage: func() core.Node {
 		return core.Func(func(cx *core.Scope) core.Node {
 			selected := core.NewSignal(cx, "")
-			return baseflow.View{Data: func() baseflow.Data { return data }, Selected: selected.Get, OnSelect: selected.Set, NodeGap: 24, RankGap: 40,
-				Style: core.Style{Height: core.Pt(220)}}
+			state, cam := &baseflow.State{}, &camera.State{}
+			return camera.View{State: cam, OnPress: state.Press, OnHover: state.Hover, Style: core.Style{Height: core.Pt(220)},
+				Content: baseflow.View{Data: func() baseflow.Data { return data }, State: state, Camera: cam,
+					Selected: selected.Get, OnSelect: selected.Set, NodeGap: 24, RankGap: 40}}
 		})
 	}}
 }

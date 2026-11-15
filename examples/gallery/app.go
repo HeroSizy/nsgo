@@ -113,6 +113,7 @@ func init() {
 		{"Accordion", m.DemoAccordion, m.DemoAccordionDetail, lucide.Rows3, cardsDemo(accordionCard, collapsiblePlayground)},
 		{"Resizable", m.DemoResizable, m.DemoResizableDetail, lucide.PanelLeft, resizableDemo},
 		{"Dock", m.DemoDock, m.DemoDockDetail, lucide.AppWindow, dockDemo},
+		{"Camera", m.DemoCamera, m.DemoCameraDetail, lucide.Move, cameraDemo},
 	}
 	feedback := []demo{
 		{"Progress", m.DemoProgress, m.DemoProgressDetail, lucide.LoaderCircle, cardsDemo(progressCard, progressRingCard, spinnerPlayground, meterCard, skeletonCard)},

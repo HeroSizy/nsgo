@@ -164,21 +164,30 @@ Popups are placed against what their trigger holds (`Overlay.AnchorContent`), th
 
 `ui/commitgraph.View` is `ui.List` with `Graph`, refs, subject, author, hash and date, in Onegit's palette. It keeps no second state: its `History` is `base/commitgraph`'s, and only the columns are its own.
 
+## Camera
+
+`base/camera` is a plane the user pans and zooms; NSH has none. The app lays its content out at the content's own size and the view shows it through a camera, fitted and centered until the user moves it, so one plane can hold screens, diagrams or anything else side by side, with the app's tools in `Children` over it.
+
+- The camera moves on the platform's frame clock: its place and scale are animated values, a drag pans by `PanValues` and a finger let go glides. `OnWheel` zooms around the pointer for a wheel, Control or Command held, and pans for a touchpad's two fingers or a sideways wheel; a pinch zooms around its `Position`, and a double press the app does not take zooms in, or out with Shift.
+- One layer over the plane takes the pointer, since hit tests follow frames rather than transforms, and hands presses and hovers to the app at points of the content (`OnPress`, `OnHover`), which finds what is there itself, as `flow.State.Press` does for a diagram.
+- `State.Zoom` and `ToView` follow where the camera is going, for marks the app keeps the same size on screen at any zoom.
+
 ## Flow diagram
 
 `base/flow` is NSGo's flow diagram; NSH has none. `layout` is pure: a layered (Sugiyama) drawing that breaks cycles, ranks nodes by longest path and then toward their neighbours' median, orders ranks by barycenters to cut crossings, places nodes by isotonic regression and routes edges through dummies as orthogonal lines on tracks of their own. Bends are kept few: a run of an edge that leaves or reaches a node settles on its middle where its corridors allow, else straight off it rather than bending, and edges of both styles reaching a node's shared side from either hand join it on one track.
 
-- `View` lays out again when the data, the direction or a node's measured size changes (`OnLayout` of its box). A change of topology moves nodes on springs for 600 ms after it; sizes settling outside that place them at once.
-- Nodes, the plane and the camera move on the platform's frame clock: each node's place and the camera are animated values, a drag pans by `PanValues`, and the edges' canvas binds every point of a route to its ends' places while they move (`route.at`), each point following the end it is nearer along the route, so no commit runs per frame. At rest the drawing binds nothing.
+- `View` has no camera: it lays out at the size its layout takes, so an app puts it on a `camera.View`, several on one if it likes, and composes its own tools around them. The camera's presses and hovers reach it through `State.Press` and `State.Hover`, and `Camera` follows the focused node.
+- It lays out again when the data, the direction or a node's measured size changes (`OnLayout` of its box). A change of topology moves nodes on springs for 600 ms after it; sizes settling outside that place them at once.
+- Nodes move on the platform's frame clock: each node's place is an animated value, and the edges' canvas binds every point of a route to its ends' places while they move (`route.at`), each point following the end it is nearer along the route, so no commit runs per frame. At rest the drawing binds nothing.
 - Dashes are the canvas's own, a piece per straight run and bend, each piece's offset anchored to the plane, so edges sharing a track dash in step.
-- One layer over the plane takes the pointer and finds the node under it from the camera and the layout, since hit tests follow frames rather than transforms: presses select and open, hovers emphasize a node's edges, and what a node holds takes no pointer. Nodes take the keyboard and assistive technology's presses themselves, and the camera follows the focused one.
-- `OnWheel` zooms around the pointer for a wheel, Control or Command held, and pans for a touchpad's two fingers or a sideways wheel; a pinch zooms around its `Position`, a double press on empty space zooms in, or out with Shift, and a finger let go glides.
+- Nodes take the keyboard and assistive technology's presses themselves; what a node holds takes no pointer.
 
-`ui/flow.View` is `View` in the theme's colors, the accent's selection ring and focus ring, and `Card`, a node's default face, its border a `CardVariant`.
+`ui/flow.Diagram` is `View` in the theme's colors, the accent's selection ring and focus ring, and `Card`, a node's default face, its border a `CardVariant`. `ui/flow.View` puts a `Diagram` on a camera of its own with an overlay in its corner, the chart TSX registers as `Flow`.
 
 | Common approach | NSGo | Why |
 | --- | --- | --- |
 | The view redraws edges and moves nodes each frame | Animated values and bound canvas arguments | The engine sends what animates once ([boundaries](../../ARCHITECTURE.md#boundaries)) |
+| A diagram with its own camera | A camera of the app's, around any content | Several diagrams and other content share one plane and the app's tools |
 | Hand-made dashes along flattened bends | The canvas's dashes, a piece at a time | Fewer points to bind while nodes move |
 | A pointing hand over nodes | The platform's arrow | Pressables keep it ([components](../../AGENTS.md#components)) |
 | `Card`'s `Border` color | `CardVariant` | `ui` takes color from variants |

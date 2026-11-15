@@ -7,6 +7,7 @@
 package flow
 
 import (
+	"github.com/nsgo-dev/nsgo/base/camera"
 	"github.com/nsgo-dev/nsgo/core"
 )
 
@@ -64,16 +65,17 @@ type Look struct {
 	Label, LabelBackground, LabelBorder core.Color
 }
 
-// View is the diagram: it fills what the app sizes and lays out Data,
-// read as a signal, again when it changes. Drag to pan, scroll with two
-// fingers on a touchpad to pan, turn the wheel or pinch to zoom around the
-// pointer, and double-click empty space to zoom in, or out with Shift.
-// Nodes take the keyboard focus in data order when the application can
-// select or open them, and the camera follows the focused node.
+// View is the diagram, laid out at the size its layout takes, again when
+// Data, read as a signal, changes; put it on a camera.View to pan and zoom
+// it, as several diagrams can share one. Nodes take the keyboard focus in
+// data order when the application can select or open them, and Camera,
+// when set, follows the focused node.
 //
 // A press on a node selects it (OnSelect) and a double press opens it
-// (OnOpen); a press on empty space selects "". The view finds the node
-// under the pointer itself, so what a node holds takes no pointer.
+// (OnOpen). Platforms hit-test views without a camera's transform, so on
+// a camera the application hands the pointer to State's Press and Hover
+// at points of the diagram, which find the node there themselves, and a
+// press on empty space selects "".
 type View struct {
 	Data func() Data
 	// Direction is the way edges point, read as a signal; nil is top to
@@ -87,13 +89,17 @@ type View struct {
 	Selected func() string
 	OnSelect func(id string)
 	OnOpen   func(id string)
-	// State holds the camera between mounts and controls it; nil keeps one
-	// of the view's own.
+	// State holds measured sizes and the layout between mounts and takes
+	// the pointer; nil keeps one of the view's own.
 	State *State
+	// Camera is the camera showing the diagram, which reveals the node the
+	// keyboard focuses; the diagram's origin is the content's unless
+	// Origin says where in it the diagram is.
+	Camera *camera.State
+	Origin func() core.Point
 	// Empty replaces the diagram while it has no nodes, an em dash when
-	// nil. Overlay sits in the top trailing corner above the diagram, such
-	// as zoom controls.
-	Empty, Overlay core.Node
+	// nil.
+	Empty core.Node
 	// Label describes the diagram for assistive technology, its count of
 	// nodes and edges when empty.
 	Label     string
@@ -114,72 +120,97 @@ type View struct {
 	TestID        string
 }
 
-// State retains measured sizes, the layout and the camera between mounts,
-// and moves the camera of the view showing it. Its zero value is ready to
-// use; keep one per diagram. Its methods run on the UI's goroutine and do
+// State retains measured sizes and the layout between mounts, and takes
+// the pointer for the view showing it. Its zero value is ready to use;
+// keep one per diagram. Its methods run on the UI's goroutine and do
 // nothing while no view shows it.
 type State struct {
 	v *view
-	// What outlives a mount: measured sizes by ID and the camera.
-	sizes     map[string]core.Size
-	cam       camera
-	userMoved bool
-	placed    bool
+	// What outlives a mount: measured sizes by ID.
+	sizes map[string]core.Size
 }
 
 // Ready reports whether every node has been measured, laid out and shown.
 func (s *State) Ready() bool { return s.v != nil && s.v.ready.GetUntracked() }
 
-// Camera returns where the camera puts the diagram's origin in the view,
-// and its scale.
-func (s *State) Camera() (x, y, zoom float32) {
-	return float32(s.cam.x), float32(s.cam.y), s.Zoom()
-}
-
-// Zoom returns the camera's scale.
-func (s *State) Zoom() float32 {
-	if s.cam.zoom == 0 {
-		return 1
+// Size is the size the diagram's layout takes, which a caller reading it
+// follows.
+func (s *State) Size() core.Size {
+	if s.v == nil {
+		return core.Size{}
 	}
-	return float32(s.cam.zoom)
-}
-
-// Fit moves the camera to show the whole diagram.
-func (s *State) Fit() {
-	if s.v != nil {
-		s.v.fit(false)
-	}
-}
-
-// ZoomIn and ZoomOut scale the view around its center.
-func (s *State) ZoomIn() {
-	if s.v != nil {
-		s.v.zoomAt(s.v.width/2, s.v.height/2, zoomStep, true)
-	}
-}
-
-func (s *State) ZoomOut() {
-	if s.v != nil {
-		s.v.zoomAt(s.v.width/2, s.v.height/2, 1/zoomStep, true)
-	}
-}
-
-// Reveal moves the camera to center the node with id, if it is shown.
-func (s *State) Reveal(id string) {
-	if s.v != nil {
-		s.v.reveal(id)
-	}
+	s.v.laidOut.Get()
+	return core.Size{Width: core.Points(s.v.result.width), Height: core.Points(s.v.result.height)}
 }
 
 // Position returns the top left corner of the node with id in diagram
 // coordinates, and false if it is not laid out.
 func (s *State) Position(id string) (x, y float32, ok bool) {
+	b, ok := s.Bounds(id)
+	return float32(b.Origin.X), float32(b.Origin.Y), ok
+}
+
+// Bounds is the frame of the node with id in diagram coordinates, false
+// when it is not laid out.
+func (s *State) Bounds(id string) (core.Bounds, bool) {
 	if s.v == nil {
-		return 0, 0, false
+		return core.Bounds{}, false
 	}
 	i, ok := s.v.index[id]
 	if !ok || i >= len(s.v.result.x) {
-		return 0, 0, false
+		return core.Bounds{}, false
 	}
-	return float32(s.v.result.x[i]), float32(s.v.result.y[i]), true
+	w, h := s.v.nodes[i].size()
+	return core.Bounds{Origin: core.Point{X: core.Points(s.v.result.x[i]), Y: core.Points(s.v.result.y[i])},
+		Size: core.Size{Width: core.Points(w), Height: core.Points(h)}}, true
+}
+
+// Reveal has the view's Camera center the node with id, if it is shown.
+func (s *State) Reveal(id string) {
+	if s.v != nil {
+		s.v.reveal(id, true)
+	}
+}
+
+// NodeAt is the node at a point of the diagram, "" for none.
+func (s *State) NodeAt(p core.Point) string {
+	if s.v == nil {
+		return ""
+	}
+	if i := s.v.hit(p); i >= 0 {
+		return s.v.nodes[i].id
+	}
+	return ""
+}
+
+// Press presses the diagram at a point of it, as a camera hands it on:
+// the node there is selected, and opened on a double press, or empty
+// space selects "". It says a node took the press.
+func (s *State) Press(p core.Point, e core.PressEvent) bool {
+	if s.v == nil {
+		return false
+	}
+	return s.v.press(p, e)
+}
+
+// Hover moves the pointer to a point of the diagram, emphasizing the
+// edges of the node there, or off it when over is false.
+func (s *State) Hover(p core.Point, over bool) {
+	if s.v == nil {
+		return
+	}
+	id := ""
+	if over {
+		id = s.NodeAt(p)
+	}
+	s.v.hovered.Set(id)
+}
+
+// Hovered is the node the pointer is over, "" for none, which a caller
+// reading it follows, such as to show the arrow over nodes.
+func (s *State) Hovered() string {
+	if s.v == nil {
+		return ""
+	}
+	return s.v.hovered.Get()
 }

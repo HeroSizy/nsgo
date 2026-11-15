@@ -14,14 +14,12 @@ const (
 	edgeGap          = 24
 	fallbackWidth    = 200
 	fallbackHeight   = 72
-	planeRoom        = 1 << 14
 	mutedNodeOpacity = .45
 	// relayoutMotion is how long after a change of topology or spacing
 	// new node sizes still move nodes rather than placing them.
 	relayoutMotion = 600 * time.Millisecond
 	ringGap        = 3
 	ringWidth      = 2
-	overlayInset   = 8
 )
 
 // nodeSpring is how nodes move to a new layout: critically damped,
@@ -46,10 +44,6 @@ type view struct {
 	structureKey uint64
 	structureAt  time.Time
 
-	width, height float64
-	camX, camY    *core.AnimatedValue
-	zoom          *core.AnimatedValue
-	cameraRun     *core.AnimationRun
 	anims         map[string]*nodeAnim
 	moveRun       *core.AnimationRun
 	moves         int
@@ -62,9 +56,7 @@ type view struct {
 	ready     *core.Signal[bool]
 	moving    *core.Signal[bool]
 	hovered   *core.Signal[string]
-	panning   *core.Signal[bool]
 	focused   string
-	pinchFrom float64
 	// lastPress is the node the last press reached, "" for empty space:
 	// a double press opens or zooms only where both presses went.
 	lastPress string
@@ -126,14 +118,10 @@ func (spec View) Render(cx *core.Scope) core.Node {
 	v := &view{cx: cx, s: state, spec: spec, anims: map[string]*nodeAnim{},
 		tick: core.NewSignal(cx, 0), laidOut: core.NewSignal(cx, 0), measured: core.NewSignal(cx, 0),
 		ready: core.NewSignal(cx, false), moving: core.NewSignal(cx, false),
-		hovered: core.NewSignal(cx, ""), panning: core.NewSignal(cx, false)}
+		hovered: core.NewSignal(cx, "")}
 	if state.sizes == nil {
 		state.sizes = map[string]core.Size{}
 	}
-	if state.cam.zoom == 0 {
-		state.cam.zoom = 1
-	}
-	v.camX, v.camY, v.zoom = core.NewAnimatedValue(cx, state.cam.x), core.NewAnimatedValue(cx, state.cam.y), core.NewAnimatedValue(cx, state.cam.zoom)
 	state.v = v
 	cx.Cleanup(func() {
 		if state.v == v {
@@ -186,14 +174,13 @@ func (spec View) Render(cx *core.Scope) core.Node {
 		})
 	})
 	empty := func() bool { return len(items.Get()) == 0 }
-	return core.View{Class: spec.Class, TestID: spec.TestID,
-		Style: core.Style{FlexGrow: 1, FlexShrink: 1, MinWidth: core.Pt(0), MinHeight: core.Pt(0), Overflow: core.Hidden}.Merge(spec.Style),
+	return core.View{Class: spec.Class, TestID: spec.TestID, Style: core.Style{AlignItems: core.AlignStart}.Merge(spec.Style),
 		Children: []core.Node{core.Show{When: empty, Then: func(cx *core.Scope) core.Node {
 			content := spec.Empty
 			if content == nil {
 				content = core.Text{Content: "—", StyleFunc: func() core.Style { return core.Style{Color: cx.Palette().TextMuted} }}
 			}
-			return core.View{Style: core.Style{FlexGrow: 1, AlignItems: core.AlignCenter, JustifyContent: core.JustifyCenter, Padding: core.All(24)},
+			return core.View{Style: core.Style{AlignItems: core.AlignCenter, JustifyContent: core.JustifyCenter, Padding: core.All(24)},
 				Children: []core.Node{content}}
 		}, Else: func(cx *core.Scope) core.Node { return v.diagram(cx, items) }}}}
 }
@@ -234,8 +221,8 @@ func (v *view) look() Look {
 	return l
 }
 
-// diagram is the camera's plane of edges and nodes under the layer taking
-// the pointer.
+// diagram is the plane of edges and nodes, as large as the layout, which
+// shows once every node is measured.
 func (v *view) diagram(cx *core.Scope, items *core.Memo[[]nodeItem]) core.Node {
 	label := func() string {
 		if v.spec.LabelFunc != nil {
@@ -247,13 +234,10 @@ func (v *view) diagram(cx *core.Scope, items *core.Memo[[]nodeItem]) core.Node {
 		v.laidOut.Get()
 		return locales.FlowLabel(cx, len(v.nodes), len(v.edges))
 	}
-	plane := core.View{PointerEvents: core.PointerEventsBoxNone,
+	return core.View{Role: core.RoleGroup, LabelFunc: label, PointerEvents: core.PointerEventsBoxNone,
 		StyleFunc: func() core.Style {
 			v.laidOut.Get()
-			s := core.Style{Position: core.Absolute, Left: core.Pt(0), Top: core.Pt(0),
-				Width: core.Pt(core.Points(v.result.width) + planeRoom), Height: core.Pt(core.Points(v.result.height) + planeRoom),
-				TransformOrigin: core.ObjectPosition{X: core.PositionAxis{Offset: core.Pt(0)}, Y: core.PositionAxis{Offset: core.Pt(0)}},
-				Animated:        &core.AnimatedStyle{TranslateX: v.camX, TranslateY: v.camY, Scale: v.zoom}}
+			s := core.Style{Width: core.Pt(core.Points(v.result.width)), Height: core.Pt(core.Points(v.result.height)), FlexShrink: 0}
 			if !v.ready.Get() {
 				s.Opacity = core.Alpha(0)
 			}
@@ -263,18 +247,6 @@ func (v *view) diagram(cx *core.Scope, items *core.Memo[[]nodeItem]) core.Node {
 			core.Each(items.Get, func(n nodeItem) string { return n.id }, func(cx *core.Scope, item func() nodeItem, _ func() int) core.Node {
 				return v.nodeBox(cx, item)
 			})}}
-	var overlay core.Node = core.Group{}
-	if v.spec.Overlay != nil {
-		overlay = core.View{Style: core.Style{Position: core.Absolute, Top: core.Pt(overlayInset), Right: core.Pt(overlayInset)},
-			Children: []core.Node{v.spec.Overlay}}
-	}
-	return core.View{Role: core.RoleGroup, LabelFunc: label,
-		Style: core.Style{FlexGrow: 1, FlexShrink: 1, MinWidth: core.Pt(0), MinHeight: core.Pt(0)},
-		OnLayout: func(b core.Bounds) {
-			v.resize(float64(b.Size.Width), float64(b.Size.Height))
-			v.tick.Update(func(n int) int { return n + 1 })
-		},
-		Children: []core.Node{plane, v.pointerLayer(), overlay}}
 }
 
 // nodeBox places a node's content where the platform moves it, and takes
@@ -313,7 +285,7 @@ func (v *view) nodeBox(cx *core.Scope, item func() nodeItem) core.Node {
 		OnFocus: func() {
 			if v.focused != id {
 				v.focused = id
-				v.revealIfHidden(id)
+				v.reveal(id, false)
 			}
 		},
 		OnBlur: func() {
@@ -379,84 +351,6 @@ func (v *view) pressHandler(id string) func(core.PressEvent) {
 			v.spec.OnOpen(id)
 		}
 	}
-}
-
-// pointerLayer takes the pointer over the whole diagram and finds the
-// node under it itself, as the plane's nodes show where the camera's
-// transform puts them: it pans when dragged, zooms on pinches and the
-// wheel, and presses or hovers the node under the pointer.
-func (v *view) pointerLayer() core.Node {
-	press := func(e core.PressEvent) {
-		if i := v.hit(e.Position); i >= 0 {
-			if f := v.pressHandler(v.nodes[i].id); f != nil {
-				f(e)
-			}
-			return
-		}
-		again := v.lastPress == ""
-		v.lastPress = ""
-		if e.Clicks >= 2 && again {
-			factor := 2.0
-			if e.Modifiers.Shift {
-				factor = .5
-			}
-			v.zoomAt(float64(e.Position.X), float64(e.Position.Y), factor, true)
-		} else if v.spec.OnSelect != nil && v.selected() != "" {
-			v.spec.OnSelect("")
-		}
-	}
-	hover := func(e core.MouseEvent) {
-		id := ""
-		if e.PressedButton == core.MouseButtonNone {
-			if i := v.hit(e.Position); i >= 0 {
-				id = v.nodes[i].id
-			}
-		}
-		v.hovered.Set(id)
-	}
-	return core.View{NoFocus: true, ImportantForAccessibility: core.ImportantNo,
-		OnPress: press, OnMouseMove: hover, OnMouseLeave: func(core.MouseEvent) { v.hovered.Set("") },
-		PanValues: core.AnimatedXY{X: v.camX, Y: v.camY},
-		OnPan: func(e core.PanEvent) {
-			switch e.Phase {
-			case core.GestureBegan:
-				if v.cameraRun != nil {
-					v.cameraRun.Stop()
-				}
-				v.panning.Set(true)
-				v.s.userMoved = true
-			case core.GestureEnded, core.GestureCancelled:
-				v.panning.Set(false)
-				v.s.cam.x, v.s.cam.y = float64(e.Values.X), float64(e.Values.Y)
-				// A finger let go glides on; a mouse stops where it is.
-				if !core.Untracked(v.cx, v.cx.Env().Desktop) {
-					v.glide(float64(e.Velocity.X), float64(e.Velocity.Y))
-				}
-			}
-		},
-		OnPinch: func(e core.GestureEvent) {
-			switch e.Phase {
-			case core.GestureBegan:
-				v.pinchFrom = 1
-			case core.GestureChanged:
-				if v.pinchFrom > 0 && e.Value > 0 {
-					v.zoomAt(float64(e.Position.X), float64(e.Position.Y), float64(e.Value)/v.pinchFrom, false)
-					v.pinchFrom = float64(e.Value)
-				}
-			}
-		},
-		OnWheel: v.wheel,
-		StyleFunc: func() core.Style {
-			s := core.Style{Position: core.Absolute, Left: core.Pt(0), Top: core.Pt(0), Right: core.Pt(0), Bottom: core.Pt(0), Cursor: core.CursorGrab}
-			switch {
-			case v.panning.Get():
-				s.Cursor = core.CursorGrabbing
-			case v.hovered.Get() != "" && v.interactive():
-				// Nodes are pressables, which keep the platform's arrow.
-				s.Cursor = core.CursorDefault
-			}
-			return s
-		}}
 }
 
 // anim returns the place of the node with id, made on first use.
@@ -597,20 +491,10 @@ func (v *view) prepare(now time.Time) {
 		}
 		v.result = layout(nodes, edges, v.direction, v.gaps)
 		v.place(ready, snap)
-		if ready && !v.s.userMoved {
-			v.fit(snap)
-		}
 		changed = true
 	}
-	if !ready && all && v.width > 0 {
+	if !ready && all {
 		v.ready.Set(true)
-		if v.s.placed {
-			// A diagram shown again keeps its camera.
-			v.moveCamera(v.s.cam, false)
-		} else {
-			v.s.placed = true
-			v.fit(true)
-		}
 	}
 	if changed {
 		v.laidOut.Update(func(n int) int { return n + 1 })

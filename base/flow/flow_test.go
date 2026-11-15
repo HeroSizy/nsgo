@@ -5,6 +5,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/nsgo-dev/nsgo/base/camera"
 	"github.com/nsgo-dev/nsgo/core"
 	"github.com/nsgo-dev/nsgo/internal/driver"
 	"github.com/nsgo-dev/nsgo/nsgotest"
@@ -39,25 +40,27 @@ func sample() Data {
 type harness struct {
 	app           *nsgotest.App
 	state         State
+	cam           camera.State
 	data          *core.Signal[int]
 	current       Data
 	selected      *core.Signal[string]
 	picks, opened []string
-	direction     Direction
 }
 
+// newHarness shows the sample on a camera that hands it the pointer.
 func newHarness(t *testing.T) *harness {
 	t.Helper()
 	h := &harness{current: sample()}
 	h.app = nsgotest.Start(t, func(cx *core.Scope) core.Node {
 		h.data = core.NewSignal(cx, 0)
 		h.selected = core.NewSignal(cx, "")
-		return View{TestID: "diagram", Label: "Pipeline", State: &h.state,
-			Data:     func() Data { h.data.Get(); return h.current },
-			Selected: h.selected.Get,
-			OnSelect: func(id string) { h.picks = append(h.picks, id); h.selected.Set(id) },
-			OnOpen:   func(id string) { h.opened = append(h.opened, id) },
-			Style:    core.Style{Width: core.Pt(900), Height: core.Pt(700)}}
+		return camera.View{TestID: "diagram", State: &h.cam, OnPress: h.state.Press, OnHover: h.state.Hover,
+			Style: core.Style{Width: core.Pt(900), Height: core.Pt(700)},
+			Content: View{Label: "Pipeline", State: &h.state, Camera: &h.cam,
+				Data:     func() Data { h.data.Get(); return h.current },
+				Selected: h.selected.Get,
+				OnSelect: func(id string) { h.picks = append(h.picks, id); h.selected.Set(id) },
+				OnOpen:   func(id string) { h.opened = append(h.opened, id) }}}
 	}, nsgotest.Size(900, 700), nsgotest.Environment(driver.Environment{ReduceMotion: true, Idiom: driver.IdiomDesktop}))
 	h.app.Settle()
 	if !h.state.Ready() {
@@ -75,14 +78,11 @@ func (h *harness) change() {
 // at is where the middle of node id shows in the view.
 func (h *harness) at(t *testing.T, id string) driver.Point {
 	t.Helper()
-	x, y, ok := h.state.Position(id)
+	b, ok := h.state.Bounds(id)
 	if !ok {
 		t.Fatalf("%s is not laid out", id)
 	}
-	v := h.state.v
-	w, ht := v.nodes[v.index[id]].size()
-	c := h.state.cam
-	return driver.Point{X: core.Points(c.x + (float64(x)+w/2)*c.zoom), Y: core.Points(c.y + (float64(y)+ht/2)*c.zoom)}
+	return h.cam.ToView(core.Point{X: b.Origin.X + b.Size.Width/2, Y: b.Origin.Y + b.Size.Height/2})
 }
 
 func TestViewMeasuresAndLaysOut(t *testing.T) {
@@ -111,17 +111,15 @@ func TestViewMeasuresAndLaysOut(t *testing.T) {
 	if _, _, ok := h.state.Position("missing"); ok {
 		t.Fatal("unknown node is laid out")
 	}
-	// The fitted diagram shows whole, at no more than its natural size.
-	z := float64(h.state.Zoom())
-	if z <= 0 || z > 1 {
+	// The diagram is as large as its layout, which the camera fits.
+	if got, want := h.app.Find("label:Pipeline").Frame.Size, (core.Size{Width: core.Points(v.result.width), Height: core.Points(v.result.height)}); got != want {
+		t.Fatalf("the diagram is %v, its layout %v", got, want)
+	}
+	if z := h.cam.Zoom(); z <= 0 || z > 1 {
 		t.Fatalf("fitted zoom %v", z)
 	}
-	c := h.state.cam
-	if c.x < 0 || c.y < 0 || c.x+v.result.width*z > 900 || c.y+v.result.height*z > 700 {
-		t.Fatalf("diagram shows at %+v, %vx%v", c, v.result.width, v.result.height)
-	}
-	if !h.app.Exists("label:Pipeline") || !h.app.Exists("label:Plan") {
-		t.Fatalf("diagram or node lacks its label\n%s", h.app.Dump())
+	if !h.app.Exists("label:Plan") {
+		t.Fatalf("a node lacks its label\n%s", h.app.Dump())
 	}
 }
 
@@ -147,73 +145,21 @@ func TestViewSelectsAndOpens(t *testing.T) {
 	if last := h.picks[len(h.picks)-1]; last != "" || len(h.opened) != 1 {
 		t.Fatalf("empty press selected %q and opened %v", last, h.opened)
 	}
+	// The pointer over a node emphasizes it.
+	h.app.HoverAt("id:diagram-pointer", h.at(t, "ship"))
+	if got := core.Untracked(h.state.v.cx, h.state.Hovered); got != "ship" {
+		t.Fatalf("hovering found %q", got)
+	}
 	// Assistive technology and the keyboard press the node itself.
 	h.app.AccessibilityAction("label:Plan", driver.ActionActivate)
 	if last := h.picks[len(h.picks)-1]; last != "plan" {
 		t.Fatalf("activating selected %q", last)
 	}
-}
-
-func TestViewPansAndZooms(t *testing.T) {
-	h := newHarness(t)
-	before := h.state.cam
-	h.app.Pan("id:diagram", driver.Point{X: 20, Y: -20}, driver.Point{X: 60, Y: -50})
-	if c := h.state.cam; c.x-before.x != 60 || c.y-before.y != -50 {
-		t.Fatalf("pan moved the camera from %+v to %+v", before, c)
-	}
-	if len(h.picks) != 0 {
-		t.Fatal("panning selected")
-	}
-	zoom := h.state.Zoom()
-	h.app.Post(h.state.ZoomIn)
+	// Revealing a node centers it.
+	h.app.Post(func() { h.state.Reveal("ship") })
 	h.app.Settle()
-	if h.state.Zoom() <= zoom {
-		t.Fatal("zoom in did not zoom")
-	}
-	h.app.Post(h.state.Fit)
-	h.app.Settle()
-	if h.state.Zoom() != zoom || h.state.userMoved {
-		t.Fatalf("fit zoom %v, want %v", h.state.Zoom(), zoom)
-	}
-	// A double press on empty space zooms in there.
-	h.app.Advance(time.Second)
-	h.app.PressAt("id:diagram", driver.Point{X: 4, Y: 690})
-	h.app.PressAt("id:diagram", driver.Point{X: 4, Y: 690})
-	if got := h.state.Zoom(); math.Abs(float64(got/zoom)-2) > 1e-3 {
-		t.Fatalf("double press zoomed to %v from %v", got, zoom)
-	}
-}
-
-func TestViewWheelAndTouchpad(t *testing.T) {
-	h := newHarness(t)
-	zoom := float64(h.state.Zoom())
-	// A wheel's notch zooms in by ×1.5 over 120 points.
-	h.app.Wheel("id:diagram", driver.Point{Y: 120}, driver.Modifiers{})
-	if got := float64(h.state.Zoom()); math.Abs(got/zoom-1.5) > 1e-3 {
-		t.Fatalf("a notch zoomed %v to %v", zoom, got)
-	}
-	// Two fingers pan; a sideways wheel pans across.
-	before := h.state.cam
-	h.app.TouchpadScroll("id:diagram", driver.Point{}, driver.Point{X: 10, Y: 5}, driver.Point{X: 20, Y: -15})
-	if c := h.state.cam; c.x-before.x != 30 || c.y-before.y != -10 || c.zoom != before.zoom {
-		t.Fatalf("touchpad moved the camera from %+v to %+v", before, c)
-	}
-	before = h.state.cam
-	h.app.Wheel("id:diagram", driver.Point{X: -40}, driver.Modifiers{})
-	if c := h.state.cam; c.x-before.x != -40 || c.zoom != before.zoom {
-		t.Fatalf("sideways wheel moved the camera from %+v to %+v", before, c)
-	}
-	// A notch with Control held zooms too.
-	zoom = float64(h.state.Zoom())
-	h.app.Wheel("id:diagram", driver.Point{Y: -120}, driver.Modifiers{Control: true})
-	if got := float64(h.state.Zoom()); math.Abs(got/zoom-1/1.5) > 1e-3 {
-		t.Fatalf("a Control-scroll zoomed %v to %v", zoom, got)
-	}
-	// A pinch zooms around its center.
-	zoom = float64(h.state.Zoom())
-	h.app.Pinch("id:diagram", 1, 2)
-	if got := float64(h.state.Zoom()); math.Abs(got/zoom-2) > 1e-3 && got != maxZoom {
-		t.Fatalf("a pinch zoomed %v to %v", zoom, got)
+	if p := h.at(t, "ship"); math.Abs(float64(p.X)-450) > 1 || math.Abs(float64(p.Y)-350) > 1 {
+		t.Fatalf("the revealed node shows at %v", p)
 	}
 }
 
@@ -243,24 +189,20 @@ func TestViewRelaysOutWhenDataChanges(t *testing.T) {
 	}
 }
 
-func TestViewShownAgainKeepsCamera(t *testing.T) {
+func TestViewShownAgainKeepsItsSizes(t *testing.T) {
 	var state State
 	shown := (*core.Signal[bool])(nil)
 	app := nsgotest.Start(t, func(cx *core.Scope) core.Node {
 		shown = core.NewSignal(cx, true)
-		return core.Show{When: shown.Get, Then: func(*core.Scope) core.Node {
-			return View{State: &state, Data: sample, Style: core.Style{Width: core.Pt(900), Height: core.Pt(700)}}
-		}}
+		return core.Show{When: shown.Get, Then: func(*core.Scope) core.Node { return View{State: &state, Data: sample} }}
 	}, nsgotest.Size(900, 700), nsgotest.Environment(driver.Environment{ReduceMotion: true, Idiom: driver.IdiomDesktop}))
 	app.Settle()
-	app.Post(state.ZoomIn)
-	app.Settle()
-	camera := state.cam
+	sizes := len(state.sizes)
 	app.Post(func() { shown.Set(false) })
 	app.Settle()
 	app.Post(func() { shown.Set(true) })
 	app.Settle()
-	if !state.Ready() || state.cam != camera {
-		t.Fatalf("diagram shown again moved: camera %+v from %+v", state.cam, camera)
+	if !state.Ready() || sizes == 0 || len(state.sizes) != sizes {
+		t.Fatalf("diagram shown again measured %d sizes, had %d", len(state.sizes), sizes)
 	}
 }

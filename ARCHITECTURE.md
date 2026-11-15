@@ -17,7 +17,8 @@ Apps import the public packages; `internal/` holds the implementation, which onl
 | `base` | `nsh-base` | Unstyled components, a file each: controls, popups, navigation, panels and tables ([components](docs/architecture/components.md)) |
 | `base/datatable`, `base/dock`, `base/plot`, `base/toast` | `nsh-base` | Complex components, a package each: a virtualized table, a dock, charts and toasts |
 | `base/commitgraph` | — | A Git history's revision graph: its layout, collapsed merges and a row's drawing ([commit graph](docs/architecture/components.md#commit-graph)) |
-| `base/flow` | — | A directed diagram: its layered layout, orthogonal routes and camera ([flow diagram](docs/architecture/components.md#flow-diagram)) |
+| `base/camera` | — | A plane the user pans and zooms around the app's content ([camera](docs/architecture/components.md#camera)) |
+| `base/flow` | — | A directed diagram: its layered layout and orthogonal routes, for a camera to show ([flow diagram](docs/architecture/components.md#flow-diagram)) |
 | `ui`, `ui/chat`, `ui/filepicker`, `ui/diff`, `ui/commitgraph`, `ui/flow`, `ui/richeditor` | `examples/nsh-gallery-ui` | Styled components on `base`, a file each, a conversation, a file picker and the styled forms of `base/diff`, `base/commitgraph`, `base/flow` and `base/richeditor` as packages ([themes](docs/architecture/themes.md#ui)) |
 | `mobile`, `desktop` | `nsh/mobile`, `nsh/desktop` | What only phones have (the tab bar) and only desktops (the window, menus) |
 | `base/textview`, `base/textview/highlight` | `nsh-base`'s `text_view`, `highlight` | `TextView`: Markdown, HTML or the app's blocks, and its code highlighting ([text view](docs/architecture/textview.md)) |
