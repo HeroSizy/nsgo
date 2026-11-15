@@ -881,9 +881,11 @@ func (p *project) webHost() ([]byte, error) {
 	return os.ReadFile(path)
 }
 
-// pageCSS is the page's style: the app fills the window.
+// pageCSS is the page's style: the app fills the window, and the page
+// never zooms, as an app's window does not; views that zoom take pinches
+// themselves.
 func pageCSS(p *project) []byte {
-	css := "html, body { margin: 0; height: 100%;"
+	css := "* { touch-action: pan-x pan-y; }\nhtml, body { margin: 0; height: 100%;"
 	if color := appearanceColor(p.Appearance); color != "" {
 		css += " background: " + color + ";"
 	}
@@ -891,10 +893,12 @@ func pageCSS(p *project) []byte {
 }
 
 // mountJS is the module that runs the app, and says so when the app cannot
-// start.
+// start. It keeps Safari, which ignores the viewport's user-scalable, from
+// zooming the page under a pinch.
 func mountJS(loader, config string) []byte {
 	return []byte(`// Written by nsgo: the page runs the app.
 import { mount } from "./` + loader + `";
+document.addEventListener("gesturestart", (e) => e.preventDefault());
 mount(null, null, { config: ` + config + ` }).catch((e) => {
   console.error(e);
   const message = document.createElement("pre");
@@ -909,7 +913,7 @@ var indexHTML = template.Must(template.New("index").Parse(`<!doctype html>
 <html>
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <title>{{.Name}}</title>
 {{- if .Appearance}}
 <meta name="color-scheme" content="{{.Appearance}}">
