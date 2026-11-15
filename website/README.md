@@ -86,6 +86,8 @@ A page has the sidebar of its language's groups, under the pages without one, it
 and next pages, an edit link and copy buttons on its code; the styles are in
 `src/styles/docs.css`.
 
+`src/lib/llms.ts` publishes the English pages for language models: `/llms.txt` lists them by group, `/llms-full.txt` holds them all and `src/pages/docs/[...slug].md.ts` serves each at `/docs/<page>.md`, its relative links made absolute and its code blocks' marks dropped. A docs page's head names its Markdown, and every page's `llms.txt`.
+
 Search (`src/components/DocSearch.astro`, opened from the sidebar, ⌘K or
 `/`) runs on [Pagefind](https://pagefind.app/): `bun run build` indexes each
 page's article after Astro into `dist/pagefind/`, one index per `<html lang>`,

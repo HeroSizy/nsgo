@@ -23,5 +23,7 @@ GitHub; `website/` builds them into the site.
   Chinese pages, and `examples/previews`' tests fail on a mark naming no
   demo.
 
+The site also serves the English pages as Markdown for language models, at `/llms.txt`, `/llms-full.txt` and `/docs/<page>.md`, and `skills/nsgo/` tells agents the same for apps: keep it current with these pages ([Docs and the website](en/contributing/docs.md#for-agents)).
+
 How the engine works, and why, is in [ARCHITECTURE.md](../../ARCHITECTURE.md)
 and `docs/architecture/`, which stay internal.

@@ -58,6 +58,16 @@ go tool nsgo dev -target android            # 在已连接的设备或模拟器�
 
 设备选择、追踪更新、性能监视器和其他语言见[运行与调试](debugging.md)。
 
+## 使用编程智能体
+
+NSGo 的技能（skill）教 Claude Code、Codex、Cursor 等编程智能体如何编写、测试和发布 NSGo 应用。在应用目录中添加它，或加上 `-g` 用于所有项目：
+
+```sh
+bunx skills add nsgo-dev/nsgo
+```
+
+自行阅读文档的智能体可以从 <https://nsgo.dev/llms.txt> 开始，它以 Markdown 列出每个页面，地址为 `https://nsgo.dev/docs/<page>.md`；<https://nsgo.dev/llms-full.txt> 包含全部页面。智能体还可以操作运行中的应用（[运行与调试](debugging.md#智能体)）。
+
 ## 下一步
 
 - [示例：待办应用](tutorials/todo.md)：状态、列表和测试，大约十分钟。

@@ -29,6 +29,7 @@ const description = doc.entry.data.description ?? copy.description;
 ---
 
 <Layout lang={lang} page="docs" path={path} title={title} description={description}>
+  <link slot="head" rel="alternate" type="text/markdown" href={`${import.meta.env.BASE_URL}docs/${doc.id}.md`} />
   <div class="container docs">
     <aside class="docs__sidebar">
       <DocSearch lang={lang} />

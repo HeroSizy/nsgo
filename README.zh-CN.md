@@ -70,6 +70,8 @@ func main() { nsgo.Run(Root) }
 
 [文档](https://nsgo.dev/zh/docs/)介绍组件与状态、布局、样式、导航、组件参考、TSX 应用、本地化、测试、嵌入以及构建与发布；[在线体验](https://nsgo.dev/gallery/)可在浏览器中运行 gallery。
 
+编程智能体可以通过 NSGo 的技能学习它（`bunx skills add nsgo-dev/nsgo`），并从 [llms.txt](https://nsgo.dev/llms.txt) 以 Markdown 阅读文档。
+
 ## 开发
 
 ```sh

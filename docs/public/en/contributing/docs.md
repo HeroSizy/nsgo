@@ -1,6 +1,6 @@
 ---
 title: Docs and the website
-description: Write a page of these docs, translate it, and run the website.
+description: Write a page of these docs, translate it, run the website and keep the agents' skill current.
 group: Contributing
 order: 83
 ---
@@ -30,8 +30,14 @@ The website is an Astro site in `website/`. It needs [Bun](https://bun.com) 1.4 
 ```sh
 cd website
 bun install
-bun run dev    # at http://localhost:4321/nsgo/
+bun run dev    # at http://localhost:4321/
 bun run build  # type-check and build, as the deployment does
 ```
 
 `website/README.md` says how the site is built and published.
+
+## For agents
+
+The website also publishes the English pages for language models: `/llms.txt` lists them, `/llms-full.txt` holds them all and `/docs/<page>.md` holds one, with absolute links and without the code blocks' marks (`src/lib/llms.ts`). They follow the pages with no step of their own.
+
+`skills/nsgo/` is the skill agents install with `bunx skills add nsgo-dev/nsgo`: `SKILL.md` with the rules an app follows, and `references/` read when a task needs them. Change it in the same change as the docs when what an app writes, the tool's commands, testing or packaging change; keep it to what an agent must follow and link the docs for the rest. `go tool nsgo test -run TestSkills .` checks its front matter, its links and every name of NSGo's it mentions.

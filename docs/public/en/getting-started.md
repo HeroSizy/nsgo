@@ -58,6 +58,16 @@ go tool nsgo dev -target android            # on a connected device or emulator
 
 [Running and debugging](debugging.md) covers devices, tracing updates, the performance monitor and other languages.
 
+## With a coding agent
+
+NSGo's skill teaches coding agents, such as Claude Code, Codex and Cursor, how an NSGo app is written, tested and shipped. Add it to the app's directory, or with `-g` for every project:
+
+```sh
+bunx skills add nsgo-dev/nsgo
+```
+
+Agents that read the docs themselves start from <https://nsgo.dev/llms.txt>, which lists every page as Markdown at `https://nsgo.dev/docs/<page>.md`; <https://nsgo.dev/llms-full.txt> holds them all. An agent can also use the running app ([Running and debugging](debugging.md#agents)).
+
 ## Next
 
 - [Example: A todo app](tutorials/todo.md): state, a list and a test, in about ten minutes.

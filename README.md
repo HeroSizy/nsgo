@@ -70,6 +70,8 @@ func main() { nsgo.Run(Root) }
 
 The [docs](https://nsgo.dev/docs/) cover components and state, layout, styles, navigation, a component reference, TSX apps, localization, testing, embedding, building and shipping; the [live demo](https://nsgo.dev/gallery/) runs the gallery in the browser.
 
+Coding agents learn NSGo from its skill, `bunx skills add nsgo-dev/nsgo`, and read the docs as Markdown from [llms.txt](https://nsgo.dev/llms.txt).
+
 ## Development
 
 ```sh

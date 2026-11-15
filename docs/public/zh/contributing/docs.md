@@ -1,6 +1,6 @@
 ---
 title: 文档与网站
-description: 编写和翻译一页文档，并运行网站。
+description: 编写和翻译一页文档，运行网站，并让智能体的技能保持最新。
 group: 参与项目
 order: 83
 ---
@@ -30,8 +30,14 @@ order: 21
 ```sh
 cd website
 bun install
-bun run dev    # 访问 http://localhost:4321/nsgo/
+bun run dev    # 访问 http://localhost:4321/
 bun run build  # 类型检查并构建，与部署时相同
 ```
 
 `website/README.md` 说明了网站如何构建和发布。
+
+## 面向智能体
+
+网站还为语言模型发布英文页面：`/llms.txt` 列出它们，`/llms-full.txt` 包含全部页面，`/docs/<page>.md` 是单个页面，链接都是绝对地址，代码块去掉了标记（`src/lib/llms.ts`）。它们随页面自动更新，无需额外步骤。
+
+`skills/nsgo/` 是智能体用 `bunx skills add nsgo-dev/nsgo` 安装的技能：`SKILL.md` 写应用要遵循的规则，`references/` 在任务需要时阅读。当应用的写法、工具的命令、测试或打包发生变化时，在同一个改动中和文档一起更新它；只写智能体必须遵循的内容，其余链接到文档。`go tool nsgo test -run TestSkills .` 检查它的 front matter、链接以及其中提到的每个 NSGo 名称。

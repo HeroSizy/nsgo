@@ -1,0 +1,39 @@
+# Writing reusable components
+
+These are the rules NSGo's own `base` and `ui` follow, for components other apps import: a library, a design system or one complex view. An app's own screens may relax them. The [Writing components](https://nsgo.dev/docs/authoring/index.md) pages hold the full examples.
+
+## Behavior and look
+
+- Keep each control's behavior, state and accessibility in an unstyled form that takes every style from its user part by part, as `base.Switch` does, and put looks in a styled form that wraps it, as `ui.Switch` does. What the styled form needs that the unstyled one lacks goes into the unstyled one, never into a second implementation.
+- Build on NSGo's `base` control when one exists instead of writing presses, focus and keyboard handling again; give it a look as `ui` does.
+- A component with no behavior worth sharing, such as a badge, can be styled alone.
+- Keep components product-neutral: what only one app uses stays in that app.
+
+## API
+
+- A component is a type with a `Render` method whose fields' zero values are the usual case. Callbacks are optional: a nil `OnChange` shows a value without changing it.
+- Controlled values come in as functions and leave through callbacks (`On func() bool`, `OnChange func(bool)`), read where they are shown so only that part updates.
+- Each part takes a `Class`, a `Style` and a `StyleFunc` named after it (`DotClass`, `DotStyle`, `DotStyleFunc`). Parts take the control's state through `PartStates`, so `checked:` classes apply while screen readers see one control.
+- The root says what the control is: `Role`, `Label` when its text does not, `Hint`, and `Checked`, `Selected`, `Disabled` or `Expanded`. Pass a root view's `OnLayout`, `Tooltip` and `TestID` through.
+- Looks come from `Variant`, a type of its own (`ToggleVariant`) whose zero value is the default, never boolean fields or a shared color type. Keep one size; a component that needs more takes `Size`, a `ui.Size` whose zero value is the default, never `Small` or `Compact` booleans. One that is one shape at any scale, such as an avatar, takes `Size` in points.
+
+## Look
+
+- Take every color from the theme inside a `StyleFunc` (`ui.ColorsOf(cx)`, `cx.Palette()`), so theme and appearance changes restyle in place. A color with no role goes in `Palette.Colors` under a name of yours, set for light and dark.
+- Do nothing implicitly by device: no size, form or behavior that changes on its own on a phone, a desktop or a TV. Make it a field the app sets.
+- A component shows the same on every platform. Imitate what one platform has natively, such as iOS's Liquid Glass, rather than dropping it elsewhere.
+- Lists, trees, tables and sidebars have a default and a selected look, no hover or press; only rows of a popup that drops down, such as a menu or a select, follow the pointer.
+- Leave the pointer's arrow alone; `Style.Cursor` is only for what the arrow cannot say, such as text fields and resize drags.
+- Keep a scroll bar against its container's edge: the scroll view fills the container and the padding goes on its content. Scroll through `core.Scroll` or `core.List`, never by stepping offsets.
+
+## Files and packages
+
+- One component to a file, named after it (`iconbutton.go`), with the types only it uses; what several share gets a file of its own.
+- A complex component gets a package of its own whose API drops its name (`dock.Area`, not `dock.DockArea`).
+- Keep unstyled and styled forms in separate packages when both exist, so apps with their own look import no styles.
+
+## Words and tests
+
+- Say the component's own words, such as an icon button's label, through the package's `locales/` catalogs in English and the languages you translate to, never string literals. Add `//go:generate go tool nsgo i18n` to the package and commit the generated `catalog_gen.go`, so apps build with Go alone.
+- Test with `nsgotest` by role and text, in both appearances (`nsgotest.Environment`), look at it under `go tool nsgo dev -lang en-XA` for cut and untranslated words, and run `go tool nsgo check -target all` so code behind every platform's build tags is vetted.
+- Register Go components for TSX in an `init` function with `tsx.Register("example.com/chips", ...)`.
