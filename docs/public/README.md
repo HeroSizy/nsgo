@@ -7,13 +7,6 @@ GitHub; `website/` builds them into the site.
 
 - `en/` and `zh/` mirror each other path for path. A page missing in
   Chinese shows the English one there, with a notice.
-- `cases/` holds the apps the website's Showcases page lists, one Markdown
-  document each; it is not part of the docs' navigation. Its root documents
-  are English, and a language's folder (`zh/`) holds their translations.
-- `components/` holds the component libraries the website's Components
-  page lists, one Markdown document each beside its screenshot; it is not
-  part of the docs' navigation. Its root documents are English too, with
-  translations in a language's folder.
 - Front matter gives each page its `title`, an optional `description`, its sidebar `group`, in the page's language, and its `order` in the sidebar. Pages without a group, the introduction and the comparison, come first. The groups follow a reader's way in: Get started (the setup in `getting-started.md`, then the examples in `tutorials/`), Toolchain, Components (`ui/`), Platform features (`services.md`, `notifications.md`, `haptics.md`, `widgets.md`, `live-activities.md` and `permissions.md`), Core concepts, Writing components (`authoring/`) and Contributing (`contributing/`).
 - `index.md` is the docs' first page. Link between pages with relative
   `.md` links (`[Testing](testing.md#run-on-a-platform)`); the site rewrites

@@ -1,5 +1,6 @@
 ---
 import { copies } from '../copy';
+import { formatStars, repoStars } from '../lib/stars';
 import { langs, links, localePath, navPages, pageUrl, type Lang, type PageId } from '../site';
 import Icon from './Icon.astro';
 import Logo from './Logo.astro';
@@ -15,6 +16,7 @@ interface Props {
 const { lang, page, path } = Astro.props;
 const copy = copies[lang].nav;
 const home = pageUrl(lang, 'home');
+const stars = await repoStars();
 const languages: Record<Lang, string> = { en: 'English', zh: '简体中文' };
 ---
 
@@ -37,8 +39,18 @@ const languages: Record<Lang, string> = { en: 'English', zh: '简体中文' };
         {copy.demo}
         <Icon name="external" size={13} class="header__external" />
       </a>
+      <a href={links.awesome} target="_blank" rel="noopener noreferrer" data-umami-event="open-awesome">
+        {copy.awesome}
+        <Icon name="external" size={13} class="header__external" />
+      </a>
       <a href={links.repo} target="_blank" rel="noopener noreferrer">
         {copy.github}
+        {stars !== undefined && (
+          <span class="header__stars" aria-label={copy.stars(stars)}>
+            <Icon name="star" size={12} />
+            {formatStars(stars)}
+          </span>
+        )}
         <Icon name="external" size={13} class="header__external" />
       </a>
     </nav>

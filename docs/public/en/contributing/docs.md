@@ -23,10 +23,6 @@ order: 21
 
 Link between pages with relative `.md` links (`[Testing](testing.md#run-on-a-platform)`); the site turns them into its URLs. Each page answers one question; how NSGo works inside stays in `docs/architecture/`.
 
-## Showcases and components
-
-The Showcases page lists the apps in `docs/public/cases/`, a Markdown document and a screenshot each; the folder's README says how to write one. The Components page lists libraries in `docs/public/components/` in the same shape. A language's translation sits in its folder, `zh/` for Chinese, under the English document's file name; a language without one shows English.
-
 ## The website
 
 The website is an Astro site in `website/`. It needs [Bun](https://bun.com) 1.4 or later:

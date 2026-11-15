@@ -26,8 +26,6 @@ needs that value changed.
 | --- | --- | --- |
 | Home | `/` | Yes |
 | Docs | `/docs/` | Yes |
-| Components | `/components/` | Yes |
-| Showcases | `/showcases/` | Yes |
 | Benchmarks | `/benchmarks/` | Yes |
 
 `src/site.ts` lists the pages; one marked `dev` is built, linked from the
@@ -43,6 +41,10 @@ Every page's words are in `src/copy.ts`; add English and Chinese together.
 Chinese headings, titles and kickers omit the trailing `。`; body sentences
 keep it. `src/layouts/Layout.astro` gives every page the header, the call to
 action and the footer.
+The header's GitHub link shows the repository's stars, which
+`src/lib/stars.ts` reads from GitHub's API as the site builds, with
+`GITHUB_TOKEN` when it is set; when GitHub does not answer, the link shows
+none. The website workflow rebuilds daily to keep them current.
 
 `scripts/web-build.mjs` builds an app with `go tool nsgo build -target web`
 from the repository root into a folder of `public/`, keeping its wasm only
@@ -51,30 +53,6 @@ served at `/gallery/`, behind `scripts/gallery-loader.html`, which reports
 its download, decompression, compilation and start progress and follows the
 site's appearance; `loader.html`, its first address, redirects there. All of `public/`'s
 builds are generated and ignored.
-
-## Showcases and components
-
-The Showcases page lists apps built with NSGo, read from the Markdown
-documents in `docs/public/cases/`; the Components page lists libraries that
-extend NSGo, read from `docs/public/components/`. Each document is one
-entry: a `#` name, a paragraph about it, a list of details, and a
-screenshot beside it. The Showcases documents give `platforms`, `site`,
-`source` and `author`; the Components documents give `kind` and `package`,
-and may give `site`, `source`, `author` and `official`. Each folder's README
-says how to write one and the page's call to action opens it, so an entry
-is one document and one image in a pull request. `src/lib/cases.ts` and
-`src/lib/components.ts` read them through `src/lib/collection.ts`, which
-fails the build with the document's line when one breaks that shape.
-An entry whose `source` is a repository's root on GitHub shows its stars,
-which `src/lib/stars.ts` reads from GitHub's API as the site builds, with
-`GITHUB_TOKEN` when it is set; an entry GitHub does not answer for shows
-none. The website workflow rebuilds daily to keep them current.
-
-A language's translations sit in its folder, `zh/` for Chinese, under the
-English document's file name; they give the name, the paragraph, an
-optional screenshot and the details that read differently, such as a
-component's `kind`. A language without a translation shows English, and
-the page marks that paragraph's language for screen readers.
 
 ## Benchmarks
 

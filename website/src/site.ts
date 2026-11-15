@@ -6,13 +6,11 @@ import type { IconName } from './components/Icon.astro';
 export type Lang = 'en' | 'zh';
 export const langs: Lang[] = ['en', 'zh'];
 
-export type PageId = 'home' | 'docs' | 'components' | 'showcases' | 'benchmarks';
+export type PageId = 'home' | 'docs' | 'benchmarks';
 
 export const pages: { id: PageId; path: string; dev?: boolean }[] = [
   { id: 'home', path: '' },
   { id: 'docs', path: 'docs/' },
-  { id: 'components', path: 'components/' },
-  { id: 'showcases', path: 'showcases/' },
   { id: 'benchmarks', path: 'benchmarks/' },
 ];
 
@@ -60,10 +58,6 @@ export const links = {
   notice: `${repo}/blob/main/NOTICE`,
   /** The gallery's web build, opened full page in a new tab. */
   gallery: `${import.meta.env.BASE_URL}gallery/`,
-  /** The folder a contributor adds a case to. */
-  cases: `${repo}/tree/main/docs/public/cases`,
-  /** The folder a contributor adds a component to. */
-  components: `${repo}/tree/main/docs/public/components`,
   /** The Benchmarks page's apps and runner. */
   benchmark: `${repo}/tree/main/benchmark`,
   /** The community's catalog of apps, packages and guides around NSGo. */

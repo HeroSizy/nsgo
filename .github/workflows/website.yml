@@ -12,7 +12,7 @@ on:
       - "docs/public/**"
       - "website/**"
       - ".github/workflows/website.yml"
-  # Daily, so the Showcases and Components pages' GitHub stars stay current.
+  # Daily, so the header's GitHub stars stay current.
   schedule:
     - cron: "0 3 * * *"
   workflow_dispatch:
