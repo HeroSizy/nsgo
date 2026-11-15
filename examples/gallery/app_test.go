@@ -731,9 +731,16 @@ func TestGesturesAndFileDrop(t *testing.T) {
 
 func TestMedia(t *testing.T) {
 	app := startDesktop(t)
-	open(app, "WebView and Video")
+	open(app, "WebView")
 	app.PostMessage("id:bridge", "hello from the page")
 	app.Find("text:hello from the page")
+	slider := app.Find("id:native-slider")
+	if slider.Kind != nsgotest.KindNative || slider.Component != sliderComponent || slider.NativeProps["value"] != 0.4 {
+		t.Fatalf("native view %+v", slider)
+	}
+	app.Emit("id:native-slider", "change", 0.25)
+	app.Find("text:0.25")
+	open(app, "Video")
 	app.Play("id:player", core.VideoInfo{Duration: 5 * time.Second, Size: core.Size{Width: 640, Height: 360}})
 	app.Press("role:button Play")
 	if v := app.Find("id:player").Video; v.Paused || !v.Muted || !v.Repeat {
@@ -745,12 +752,6 @@ func TestMedia(t *testing.T) {
 	if s := app.Find("id:player").Seeks; len(s) != 1 || s[0] != 0 {
 		t.Fatalf("seeks = %v", s)
 	}
-	slider := app.Find("id:native-slider")
-	if slider.Kind != nsgotest.KindNative || slider.Component != sliderComponent || slider.NativeProps["value"] != 0.4 {
-		t.Fatalf("native view %+v", slider)
-	}
-	app.Emit("id:native-slider", "change", 0.25)
-	app.Find("text:0.25")
 }
 
 // TestSystemSwitch shows the platform's switch in the Switch playground
@@ -791,7 +792,7 @@ func TestWebInput(t *testing.T) {
 		t.Skip("trusted web input and downloads are macOS's")
 	}
 	app := startDesktop(t)
-	open(app, "WebView and Video")
+	open(app, "WebView")
 	app.WaitFor("id:bridge", 10*time.Second)
 	// The page posts where its button is as it loads.
 	time.Sleep(2 * time.Second)
@@ -1807,7 +1808,7 @@ func TestRichEditorTakesTyping(t *testing.T) {
 // target, by the test as the page would headless.
 func TestWebEvaluate(t *testing.T) {
 	app := startDesktop(t)
-	open(app, "WebView and Video")
+	open(app, "WebView")
 	app.WaitFor("id:bridge", 10*time.Second)
 	if nsgotest.Target() != "" {
 		// The page loads before it can answer.

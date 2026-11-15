@@ -488,8 +488,10 @@ const (
 	textDemoCanvasDetail
 	textDemoShader
 	textDemoShaderDetail
-	textDemoWebViewAndVideo
-	textDemoWebViewAndVideoDetail
+	textDemoWebView
+	textDemoWebViewDetail
+	textDemoVideo
+	textDemoVideoDetail
 	textDemoOverlay
 	textDemoOverlayDetail
 	textDemoCommitGraph
@@ -2729,8 +2731,10 @@ var keyOfText = [numTexts]string{
 	"demoCanvasDetail",
 	"demoShader",
 	"demoShaderDetail",
-	"demoWebViewAndVideo",
-	"demoWebViewAndVideoDetail",
+	"demoWebView",
+	"demoWebViewDetail",
+	"demoVideo",
+	"demoVideoDetail",
 	"demoOverlay",
 	"demoOverlayDetail",
 	"demoCommitGraph",
@@ -4968,8 +4972,10 @@ var textsEn = i18n.NewTexts(""+
 	"2D drawing: paths, gradients, text, images, native animation"+
 	"Shader"+
 	"Fragment shaders in Go's syntax, uniforms the platform animates"+
-	"WebView and Video"+
-	"Web views, video players and the app's own native views"+
+	"WebView"+
+	"Web views with messages both ways, a site's history and the app's own native views"+
+	"Video"+
+	"The platform's video player, with its controls or the app's"+
 	"Overlay"+
 	"Content on top of the screen, outside the box that clips it"+
 	"CommitGraph"+
@@ -7204,8 +7210,10 @@ var textsEn = i18n.NewTexts(""+
 		60,
 		6,
 		63,
-		17,
-		55,
+		7,
+		82,
+		5,
+		59,
 		7,
 		59,
 		11,
@@ -9443,8 +9451,10 @@ var textsZhHans = i18n.NewTexts(""+
 	"2D 绘图：路径、渐变、文字、图片、原生动画"+
 	"着色器"+
 	"用 Go 语法写的片段着色器，平台驱动的 uniform 动画"+
-	"网页视图与视频"+
-	"网页视图、视频播放器和应用自己的原生视图"+
+	"网页视图"+
+	"双向传递消息的网页视图、网站的浏览历史和应用自己的原生视图"+
+	"视频"+
+	"平台的视频播放器，用它自己的控件或应用的控件"+
 	"浮层"+
 	"显示在屏幕最上层、超出裁剪它的容器的内容"+
 	"提交图"+
@@ -11679,8 +11689,10 @@ var textsZhHans = i18n.NewTexts(""+
 		60,
 		9,
 		67,
-		21,
-		60,
+		12,
+		87,
+		6,
+		66,
 		6,
 		60,
 		9,
@@ -14940,21 +14952,33 @@ func DemoShaderDetail(cx *core.Scope) string { return For(cx).DemoShaderDetail()
 // DemoShaderDetail is the package's DemoShaderDetail in the language of msgs.
 func (msgs Messages) DemoShaderDetail() string { return msgs.text(textDemoShaderDetail) }
 
-// DemoWebViewAndVideo says "WebView and Video"
+// DemoWebView says "WebView"
 // in the language the app shows under cx.
-func DemoWebViewAndVideo(cx *core.Scope) string { return For(cx).DemoWebViewAndVideo() }
+func DemoWebView(cx *core.Scope) string { return For(cx).DemoWebView() }
 
-// DemoWebViewAndVideo is the package's DemoWebViewAndVideo in the language of msgs.
-func (msgs Messages) DemoWebViewAndVideo() string { return msgs.text(textDemoWebViewAndVideo) }
+// DemoWebView is the package's DemoWebView in the language of msgs.
+func (msgs Messages) DemoWebView() string { return msgs.text(textDemoWebView) }
 
-// DemoWebViewAndVideoDetail says "Web views, video players and the app's own native views"
+// DemoWebViewDetail says "Web views with messages both ways, a site's history and the app's own native views"
 // in the language the app shows under cx.
-func DemoWebViewAndVideoDetail(cx *core.Scope) string { return For(cx).DemoWebViewAndVideoDetail() }
+func DemoWebViewDetail(cx *core.Scope) string { return For(cx).DemoWebViewDetail() }
 
-// DemoWebViewAndVideoDetail is the package's DemoWebViewAndVideoDetail in the language of msgs.
-func (msgs Messages) DemoWebViewAndVideoDetail() string {
-	return msgs.text(textDemoWebViewAndVideoDetail)
-}
+// DemoWebViewDetail is the package's DemoWebViewDetail in the language of msgs.
+func (msgs Messages) DemoWebViewDetail() string { return msgs.text(textDemoWebViewDetail) }
+
+// DemoVideo says "Video"
+// in the language the app shows under cx.
+func DemoVideo(cx *core.Scope) string { return For(cx).DemoVideo() }
+
+// DemoVideo is the package's DemoVideo in the language of msgs.
+func (msgs Messages) DemoVideo() string { return msgs.text(textDemoVideo) }
+
+// DemoVideoDetail says "The platform's video player, with its controls or the app's"
+// in the language the app shows under cx.
+func DemoVideoDetail(cx *core.Scope) string { return For(cx).DemoVideoDetail() }
+
+// DemoVideoDetail is the package's DemoVideoDetail in the language of msgs.
+func (msgs Messages) DemoVideoDetail() string { return msgs.text(textDemoVideoDetail) }
 
 // DemoOverlay says "Overlay"
 // in the language the app shows under cx.

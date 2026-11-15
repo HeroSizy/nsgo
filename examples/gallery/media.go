@@ -11,6 +11,7 @@ import (
 	"github.com/nsgo-dev/nsgo/core"
 
 	"github.com/nsgo-dev/nsgo/examples/gallery/locales"
+	"github.com/nsgo-dev/nsgo/i18n"
 	"github.com/nsgo-dev/nsgo/ui"
 )
 
@@ -158,6 +159,14 @@ func navButton(cx *core.Scope, flip bool, enabled func() bool, label string, onP
 	}}
 }
 
+// docsHome is NSGo's docs on nsgo.dev, in the language the gallery shows.
+func docsHome(cx *core.Scope) string {
+	if locales.Catalog.Match(i18n.Language(cx)) == "zh-Hans" {
+		return "https://nsgo.dev/zh/docs/"
+	}
+	return "https://nsgo.dev/docs/"
+}
+
 func site(cx *core.Scope) core.Node {
 	tr := locales.For(cx)
 	colors := ui.ColorsOf(cx)
@@ -194,7 +203,7 @@ func site(cx *core.Scope) core.Node {
 			}},
 			core.Text{ContentFunc: host, MaxLines: 1, EllipsizeMode: core.EllipsizeMiddle, Style: core.Style{FlexGrow: 1, FlexShrink: 1, FontSize: 13}, StyleFunc: ui.Colored(colors.Muted)},
 		}},
-		core.WebView{Ref: ref, Source: core.WebSrc("https://go.dev"), TestID: "site", StyleFunc: func() core.Style { return mediaFrame(cx, 340, colors.Inset()) }, OnNavigationStateChange: state.Set},
+		core.WebView{Ref: ref, SourceFunc: func() core.WebSource { return core.WebSrc(docsHome(cx)) }, TestID: "site", StyleFunc: func() core.Style { return mediaFrame(cx, 340, colors.Inset()) }, OnNavigationStateChange: state.Set},
 		core.View{Style: core.Style{Direction: core.Row, AlignItems: core.AlignCenter, Gap: 10}, Children: []core.Node{
 			navButton(cx, true, func() bool { return state.Get().CanGoBack }, tr.MediaBack(), ref.GoBack),
 			navButton(cx, false, func() bool { return state.Get().CanGoForward }, tr.MediaForward(), ref.GoForward),
@@ -299,8 +308,13 @@ func nativeView(cx *core.Scope) core.Node {
 	}}
 }
 
-// mediaDemo is the platform's hosted views: a web view with messages both
-// ways, a site with its history, a video player and the app's own views.
-func mediaDemo(cx *core.Scope) core.Node {
-	return demoPage(cx, pageProps{}, messaging, site, player, nativeView)
+// webViewDemo is the platform's hosted views: a web view with messages
+// both ways, NSGo's docs with their history and the app's own views.
+func webViewDemo(cx *core.Scope) core.Node {
+	return demoPage(cx, pageProps{}, messaging, site, nativeView)
+}
+
+// videoDemo is the platform's video player.
+func videoDemo(cx *core.Scope) core.Node {
+	return demoPage(cx, pageProps{}, player)
 }

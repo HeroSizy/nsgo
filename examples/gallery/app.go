@@ -146,7 +146,8 @@ func init() {
 			{"Lists", m.DemoLists, m.DemoListsDetail, lucide.List, listsDemo},
 			{"Canvas", m.DemoCanvas, m.DemoCanvasDetail, lucide.PenTool, canvasDemo},
 			{"Shader", m.DemoShader, m.DemoShaderDetail, lucide.Sparkles, shaderDemo},
-			{"WebView and Video", m.DemoWebViewAndVideo, m.DemoWebViewAndVideoDetail, lucide.Film, mediaDemo},
+			{"WebView", m.DemoWebView, m.DemoWebViewDetail, lucide.Globe, webViewDemo},
+			{"Video", m.DemoVideo, m.DemoVideoDetail, lucide.Film, videoDemo},
 			{"Overlay", m.DemoOverlay, m.DemoOverlayDetail, lucide.Layers, cardsDemo(overlayCard)},
 		}},
 		{"Styling", m.GroupStyling, []demo{
