@@ -131,6 +131,40 @@ func TestAccessAllowsRegisteredWebScheme(t *testing.T) {
 	t.Fatal("no web item")
 }
 
+// mediaAccess allows web views every page and the devices named.
+type mediaAccess []string
+
+func (a mediaAccess) Allows(req AccessRequest) bool {
+	return req.Permission == AccessWebView && (req.Method != AccessMedia || slices.Contains(a, req.Resource))
+}
+
+func (a mediaAccess) WebHosts() []string { return []string{"*"} }
+
+func TestAccessHoldsWhatWebPagesCapture(t *testing.T) {
+	both := WebMicrophone | WebCamera
+	h := newHost(t, Size{Width: 100, Height: 100}, func(cx *Scope) Node {
+		held := Func(func(cx *Scope) Node {
+			cx.ProvideAccess(mediaAccess{"microphone"})
+			return WebView{Source: WebSrc("https://ok.com/"), Media: both, TestID: "held"}
+		})
+		return View{Children: []Node{held,
+			WebView{Source: WebSrc("https://ok.com/"), Media: both, TestID: "own"},
+			WebView{Source: WebSrc("https://ok.com/"), TestID: "none"}}}
+	})
+	got := map[string]WebMedia{}
+	for _, it := range h.commit().Items {
+		if it.Kind == driver.ItemWeb {
+			got[h.tree.nodes[it.ID].props.TestID] = it.Web.Media
+		}
+	}
+	if got["held"] != WebMicrophone || got["own"] != both || got["none"] != 0 {
+		t.Fatalf("the web views may capture %v", got)
+	}
+	if !both.Allows(WebCamera) || WebMicrophone.Allows(both) || both.Allows(0) {
+		t.Fatal("a page asking for both was given them with one allowed")
+	}
+}
+
 func TestProvideHostGivesASubtreeItsOwnChannel(t *testing.T) {
 	app, plugin := NewHost(), NewHost()
 	app.Handle("secret", func(c *HostCall) { c.Resolve("the app's") })

@@ -67,6 +67,13 @@ var (
 	webkitSettingsSetEnableJSMarkup      func(uintptr, int32)
 	webkitSettingsSetUserAgent           func(uintptr, *byte)
 	webkitSettingsSetBackForwardGestures func(uintptr, int32)
+	webkitSettingsSetEnableMediaStream   func(uintptr, int32)
+	webkitUserMediaRequestGetType        func() uintptr
+	webkitUserMediaIsForAudio            func(uintptr) int32
+	webkitUserMediaIsForVideo            func(uintptr) int32
+	webkitUserMediaIsForDisplay          func(uintptr) int32
+	webkitPermissionRequestAllow         func(uintptr)
+	webkitPermissionRequestDeny          func(uintptr)
 	webkitContentRegisterHandler         func(uintptr, *byte, *byte) int32
 	webkitContentUnregisterHandler       func(uintptr, *byte, *byte)
 	webkitContentAddScript               func(uintptr, uintptr)
@@ -160,6 +167,13 @@ func bindWebKit(webkit, jsc, soup uintptr) {
 	reg(&webkitSettingsSetEnableJSMarkup, "webkit_settings_set_enable_javascript_markup")
 	reg(&webkitSettingsSetUserAgent, "webkit_settings_set_user_agent")
 	reg(&webkitSettingsSetBackForwardGestures, "webkit_settings_set_enable_back_forward_navigation_gestures")
+	reg(&webkitSettingsSetEnableMediaStream, "webkit_settings_set_enable_media_stream")
+	reg(&webkitUserMediaRequestGetType, "webkit_user_media_permission_request_get_type")
+	reg(&webkitUserMediaIsForAudio, "webkit_user_media_permission_is_for_audio_device")
+	reg(&webkitUserMediaIsForVideo, "webkit_user_media_permission_is_for_video_device")
+	reg(&webkitUserMediaIsForDisplay, "webkit_user_media_permission_is_for_display_device")
+	reg(&webkitPermissionRequestAllow, "webkit_permission_request_allow")
+	reg(&webkitPermissionRequestDeny, "webkit_permission_request_deny")
 	reg(&webkitContentRegisterHandler, "webkit_user_content_manager_register_script_message_handler")
 	reg(&webkitContentUnregisterHandler, "webkit_user_content_manager_unregister_script_message_handler")
 	reg(&webkitContentAddScript, "webkit_user_content_manager_add_script")
@@ -313,6 +327,8 @@ func (w *window) configureWeb(v *view, c *driver.WebConfig) {
 		webkitSettingsSetUserAgent(settings, cstr(c.UserAgent))
 	}
 	webkitSettingsSetBackForwardGestures(settings, boolInt(c.BackForwardGestures))
+	// Pages see no media devices unless they may capture one.
+	webkitSettingsSetEnableMediaStream(settings, boolInt(c.Media != 0))
 	w.webBackground(v)
 	// Scripts apply to pages loaded from now on: load again.
 	if first || scripts || c.Source != old.Source || !maps.Equal(c.Headers, old.Headers) {
@@ -380,6 +396,7 @@ func (w *window) makeWeb(v *view) {
 	w.connect(v, wv.widget, "load-changed", cbWebLoadChanged)
 	w.connect(v, wv.widget, "load-failed", cbWebLoadFailed)
 	w.connect(v, wv.widget, "decide-policy", cbWebPolicy)
+	w.connect(v, wv.widget, "permission-request", cbWebPermission)
 	w.connect(v, wv.widget, "map", cbWebMap)
 	w.connect(v, wv.content, "script-message-received::"+webHandler, cbWebMessage)
 
@@ -799,6 +816,29 @@ func webPolicyCallback(page, decision uintptr, kind uint32, data uintptr) int32 
 	webkitPolicyDecisionIgnore(decision)
 	w.report(v, driver.Event{Kind: driver.EventError, ID: v.id, Text: driver.RefusedNavigation(url),
 		Navigation: &driver.WebNavigation{URL: url}})
+	return 1
+}
+
+// webPermissionCallback answers getUserMedia with what the config's
+// Media grants, without WebKit's prompt, and refuses screens; other
+// permissions keep WebKit's handling, which denies them.
+func webPermissionCallback(page, request uintptr, data uintptr) int32 {
+	_, v := webOf(data, page)
+	if v == nil || gTypeIsA(request, webkitUserMediaRequestGetType()) == 0 {
+		return 0
+	}
+	var want driver.WebMedia
+	if webkitUserMediaIsForAudio(request) != 0 {
+		want |= driver.WebMicrophone
+	}
+	if webkitUserMediaIsForVideo(request) != 0 {
+		want |= driver.WebCamera
+	}
+	if webkitUserMediaIsForDisplay(request) == 0 && v.web.config.Media.Allows(want) {
+		webkitPermissionRequestAllow(request)
+	} else {
+		webkitPermissionRequestDeny(request)
+	}
 	return 1
 }
 

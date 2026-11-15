@@ -73,7 +73,22 @@ type WebConfig struct {
 	// Hosts are the hosts Navigable allows, space-separated patterns:
 	// "*", "*.example.com" or a host.
 	Hosts string
+	// Media is what the pages may capture through getUserMedia; the
+	// platform refuses the rest as the page asks.
+	Media WebMedia
 }
+
+// WebMedia is a set of the devices a web view's pages may capture.
+type WebMedia uint8
+
+const (
+	WebMicrophone WebMedia = 1 << iota
+	WebCamera
+)
+
+// Allows reports whether m holds every device of want, so a page asking
+// for both gets neither unless both are allowed.
+func (m WebMedia) Allows(want WebMedia) bool { return want != 0 && m&want == want }
 
 // Navigable reports whether a restricted view's page may navigate to
 // rawURL at its top level: a page of its own (about:, data:, blob:), or

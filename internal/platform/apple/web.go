@@ -18,6 +18,7 @@ import (
 	"github.com/ebitengine/purego/objc"
 
 	"github.com/nsgo-dev/nsgo/internal/driver"
+	"github.com/nsgo-dev/nsgo/internal/platform/privacy"
 )
 
 // Web is a web view's WKWebView, filling the view that holds it. WebKit
@@ -78,7 +79,7 @@ func loadWebKit() {
 		}
 	}
 	var protocols []*objc.Protocol
-	for _, name := range []string{"WKNavigationDelegate", "WKScriptMessageHandler", "WKDownloadDelegate", "WKURLSchemeHandler"} {
+	for _, name := range []string{"WKNavigationDelegate", "WKUIDelegate", "WKScriptMessageHandler", "WKDownloadDelegate", "WKURLSchemeHandler"} {
 		if p := objc.GetProtocol(name); p != nil {
 			protocols = append(protocols, p)
 		}
@@ -124,6 +125,19 @@ func loadWebKit() {
 				task.Send(sel("didFinish"))
 			}},
 			{Cmd: sel("webView:stopURLSchemeTask:"), Fn: func(objc.ID, objc.SEL, objc.ID, objc.ID) {}},
+			// getUserMedia (macOS 12, iOS 15): what the config's Media
+			// grants, which skips WebKit's own prompt; the system still
+			// asks the user for each device.
+			{Cmd: sel("webView:requestMediaCapturePermissionForOrigin:initiatedByFrame:type:decisionHandler:"),
+				Fn: func(self objc.ID, _ objc.SEL, _, _, _ objc.ID, kind int, decide objc.ID) {
+					const grant, deny = 1, 2 // WKPermissionDecision
+					w := webHandlers[self]
+					if w == nil || !w.mayCapture(captureMedia(kind)) {
+						CallBlock(decide, deny)
+						return
+					}
+					CallBlock(decide, grant)
+				}},
 			// Downloads (WKDownload, macOS 11.3 and iOS 14.5), only for a
 			// view that saves them.
 			{Cmd: sel("webView:decidePolicyForNavigationAction:decisionHandler:"), Fn: func(self objc.ID, _ objc.SEL, _, action, decide objc.ID) {
@@ -202,6 +216,40 @@ func loadWebKit() {
 				}
 			}},
 		})
+}
+
+// captureMedia is the devices a WKMediaCaptureType names.
+func captureMedia(kind int) driver.WebMedia {
+	switch kind {
+	case 0: // WKMediaCaptureTypeCamera
+		return driver.WebCamera
+	case 1: // WKMediaCaptureTypeMicrophone
+		return driver.WebMicrophone
+	}
+	return driver.WebCamera | driver.WebMicrophone
+}
+
+// usageKeys are the Info.plist keys each device needs, without which the
+// system would end the app as WebKit asks for it.
+var usageKeys = [...]struct {
+	media driver.WebMedia
+	key   string
+}{{driver.WebMicrophone, "NSMicrophoneUsageDescription"}, {driver.WebCamera, "NSCameraUsageDescription"}}
+
+// mayCapture reports whether the page may capture want: the config
+// grants it and the app declares why, logging what is missing.
+func (w *Web) mayCapture(want driver.WebMedia) bool {
+	if !w.config.Media.Allows(want) {
+		log.Print("nsgo: a web view's page asked for a device its WebView's Media leaves out")
+		return false
+	}
+	for _, u := range usageKeys {
+		if want&u.media != 0 && !privacy.DeclaresUsage(u.key) {
+			log.Printf("nsgo: a web view's page needs %s in the app's Info.plist (nsgo.yaml's apple.info)", u.key)
+			return false
+		}
+	}
+	return true
 }
 
 // downloads are the downloads running, by their WKDownload, each
@@ -308,6 +356,7 @@ func (w *Web) make() {
 	w.web = objc.ID(Class("WKWebView")).Send(sel("alloc")).Send(sel("initWithFrame:configuration:"), bounds, config)
 	config.Send(sel("release"))
 	w.web.Send(sel("setNavigationDelegate:"), w.handler)
+	w.web.Send(sel("setUIDelegate:"), w.handler)
 	const flexibleSize = 2 | 16 // width and height, in AppKit and UIKit alike
 	w.web.Send(sel("setAutoresizingMask:"), uint(flexibleSize))
 	// WebKit paints white otherwise; on macOS a page without a
@@ -470,6 +519,7 @@ func (w *Web) Close() {
 func (w *Web) close() {
 	w.web.Send(sel("stopLoading"))
 	w.web.Send(sel("setNavigationDelegate:"), objc.ID(0))
+	w.web.Send(sel("setUIDelegate:"), objc.ID(0))
 	// The content controller holds the handler, which would keep it alive.
 	w.web.Send(sel("configuration")).Send(sel("userContentController")).
 		Send(sel("removeScriptMessageHandlerForName:"), NSString(messageHandler))

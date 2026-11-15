@@ -110,6 +110,7 @@ func webViewFace(p *props) core.Node {
 		NoScroll:                        !p.boolOr("scrollable", true),
 		NoJavaScript:                    !p.boolOr("javaScriptEnabled", true),
 		BackForwardGestures:             p.bool("allowsBackForwardNavigationGestures"),
+		Media:                           r.webMedia(p.get("media")),
 		Class:                           p.class(),
 		StyleFunc:                       p.styleFunc(),
 		OnError:                         p.onError("onError"),
@@ -137,6 +138,21 @@ func webViewFace(p *props) core.Node {
 		w.OnDownload = func(d core.WebDownload) { h(r.webDownload(d)) }
 	}
 	return w
+}
+
+// webMedia is the devices a web view's media prop names: "microphone"
+// and "camera".
+func (r *runtime) webMedia(v js.Value) core.WebMedia {
+	var m core.WebMedia
+	for _, item := range r.arrayItems(v) {
+		switch stringOf(item) {
+		case "microphone":
+			m |= core.WebMicrophone
+		case "camera":
+			m |= core.WebCamera
+		}
+	}
+	return m
 }
 
 // webDownload is { state, id, url, filename, path }, with bytes once

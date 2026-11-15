@@ -69,7 +69,7 @@ func (s *surface) createWeb(v *view) {
 func sameFrame(a, b *driver.WebConfig) bool {
 	return a.Source == b.Source && a.InjectedJavaScript == b.InjectedJavaScript &&
 		a.InjectedJavaScriptBeforeContent == b.InjectedJavaScriptBeforeContent &&
-		a.NoScroll == b.NoScroll && a.NoJavaScript == b.NoJavaScript
+		a.NoScroll == b.NoScroll && a.NoJavaScript == b.NoJavaScript && a.Media == b.Media
 }
 
 func (s *surface) setWeb(v *view, c *driver.WebConfig) {
@@ -101,6 +101,16 @@ func (s *surface) setWeb(v *view, c *driver.WebConfig) {
 		}
 	}
 	w.frame.Call("setAttribute", "sandbox", strings.Join(sandbox, " "))
+	// The browser asks the user for what the frame may capture and
+	// refuses the rest, from the frame's next page on.
+	var allow []string
+	if c.Media&driver.WebMicrophone != 0 {
+		allow = append(allow, "microphone")
+	}
+	if c.Media&driver.WebCamera != 0 {
+		allow = append(allow, "camera")
+	}
+	w.frame.Call("setAttribute", "allow", strings.Join(allow, "; "))
 	script := func(js string) string {
 		return "<script>" + strings.ReplaceAll(js, "</script", `<\/script`) + "</script>"
 	}

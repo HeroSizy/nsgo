@@ -54,6 +54,7 @@ func TestParseCapabilitiesStrictly(t *testing.T) {
 		`{"network": {"hosts": ["https://a.com"]}}`,
 		`{"host": ["a/../b"]}`,
 		`{"clipboard": "yes"}`,
+		`{"webview": {"hosts": ["a.com"], "media": ["screen"]}}`,
 	} {
 		if _, _, err := ParseCapabilities([]byte(bad), true); !errors.Is(err, ErrFormat) {
 			t.Errorf("%s: %v", bad, err)
@@ -76,7 +77,7 @@ func TestCapabilitiesAllow(t *testing.T) {
 			{Host: "api.com", Methods: []string{"GET"}, Schemes: []string{"https"}, PathPrefixes: []string{"/v1"}},
 			{Host: "ws.com", Port: 8443, Paths: []string{"/live"}},
 		}},
-		WebView: &WebView{Hosts: []string{"docs.com"}},
+		WebView: &WebView{Hosts: []string{"docs.com"}, Media: []string{"microphone"}},
 		OpenURL: &OpenURL{Schemes: []string{"https"}},
 		Host:    []string{"player.*", "search"}, Biometrics: true,
 	}
@@ -98,6 +99,8 @@ func TestCapabilitiesAllow(t *testing.T) {
 		{"webview", "https://docs.com/a", "", true},
 		{"webview", "https://evil.io/", "", false},
 		{"webview", "", "input", false},
+		{"webview", "microphone", "media", true},
+		{"webview", "camera", "media", false},
 		{"openUrl", "https://a.com", "", true},
 		{"openUrl", "tel:123", "", false},
 		{"host", "player.play", "", true},

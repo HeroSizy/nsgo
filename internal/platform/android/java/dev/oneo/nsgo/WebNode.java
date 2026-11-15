@@ -11,6 +11,8 @@ import android.view.ContextThemeWrapper;
 import android.view.MotionEvent;
 import android.view.ViewGroup;
 import android.webkit.JavascriptInterface;
+import android.webkit.PermissionRequest;
+import android.webkit.WebChromeClient;
 import android.webkit.WebResourceError;
 import android.webkit.WebResourceRequest;
 import android.webkit.WebSettings;
@@ -33,6 +35,8 @@ import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLConnection;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Locale;
 import java.util.HashMap;
 import java.util.Map;
@@ -84,6 +88,9 @@ final class WebNode {
         void report(int kind, String text, Navigation navigation);
 
         void download(String data);
+
+        /** Asks the user for the system's permissions, answering whether all were granted; false at once where no activity can ask. */
+        void askPermissions(String[] permissions, java.util.function.Consumer<Boolean> answer);
     }
 
     /** A page and its history, as core.WebNavigation. */
@@ -109,6 +116,9 @@ final class WebNode {
     private Map<String, String> headers = new HashMap<>();
     private boolean noScroll;
     private boolean incognito;
+    /** What pages may capture through getUserMedia, driver.WebMedia's bits: MICROPHONE, CAMERA. */
+    private int media;
+    private static final int MICROPHONE = 1, CAMERA = 2;
     private String downloadDir = "";
     /** The blob: downloads waiting for their page's bytes, by the token the page answers with. UI thread. */
     private final Map<String, BlobAnswer> blobs = new HashMap<>();
@@ -134,6 +144,7 @@ final class WebNode {
         view.addJavascriptInterface(new Bridge(), INTERFACE);
         view.addJavascriptInterface(new Blobs(), BLOBS);
         view.setWebViewClient(new Client());
+        view.setWebChromeClient(new Chrome());
         view.setDownloadListener(this::download);
         view.setOnTouchListener((v, e) -> {
             if (e.getActionMasked() == MotionEvent.ACTION_DOWN) {
@@ -246,6 +257,44 @@ final class WebNode {
             if (!request.isForMainFrame()) return;
             Navigation nav = new Navigation(request.getUrl().toString(), "", false, false, false);
             reporter.report(Protocol.EVENT_ERROR, String.valueOf(error.getDescription()), nav);
+        }
+    }
+
+    /** Answers getUserMedia with what media grants, asking the user for RECORD_AUDIO and CAMERA first where the app holds neither; other resources keep android.webkit's refusal. */
+    private final class Chrome extends WebChromeClient {
+        @Override
+        public void onPermissionRequest(PermissionRequest request) {
+            int want = 0;
+            List<String> resources = new ArrayList<>(), permissions = new ArrayList<>();
+            for (String resource : request.getResources()) {
+                if (PermissionRequest.RESOURCE_AUDIO_CAPTURE.equals(resource)) {
+                    want |= MICROPHONE;
+                    permissions.add(android.Manifest.permission.RECORD_AUDIO);
+                } else if (PermissionRequest.RESOURCE_VIDEO_CAPTURE.equals(resource)) {
+                    want |= CAMERA;
+                    permissions.add(android.Manifest.permission.CAMERA);
+                } else {
+                    continue;
+                }
+                resources.add(resource);
+            }
+            if (want == 0 || (media & want) != want || destroyed) {
+                request.deny();
+                return;
+            }
+            String[] granted = resources.toArray(new String[0]);
+            List<String> missing = new ArrayList<>();
+            for (String p : permissions) {
+                if (view.getContext().checkSelfPermission(p) != android.content.pm.PackageManager.PERMISSION_GRANTED) missing.add(p);
+            }
+            if (missing.isEmpty()) {
+                request.grant(granted);
+                return;
+            }
+            reporter.askPermissions(missing.toArray(new String[0]), allowed -> {
+                if (allowed && !destroyed) request.grant(granted);
+                else request.deny();
+            });
         }
     }
 
@@ -553,6 +602,7 @@ final class WebNode {
         boolean noScroll = Protocol.flag(flags, 0), noJavaScript = Protocol.flag(flags, 1);
         restricted = Protocol.flag(flags, 2);
         boolean incognito = Protocol.flag(flags, 3);
+        media = (Protocol.flag(flags, 4) ? MICROPHONE : 0) | (Protocol.flag(flags, 5) ? CAMERA : 0);
         String hosts = Protocol.readString(in).trim();
         this.hosts = hosts.isEmpty() ? new String[0] : hosts.split(" +");
         this.downloadDir = Protocol.readString(in);

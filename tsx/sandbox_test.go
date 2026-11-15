@@ -128,6 +128,18 @@ func TestSandboxHoldsAPackageToItsCapabilities(t *testing.T) {
 	}
 }
 
+func TestSandboxHoldsWhatWebPagesCapture(t *testing.T) {
+	p := verified(t, `import { mount, View, WebView } from "nsgo";
+mount(() => <View>
+	<WebView testID="web" src="https://call.example.com/" media={["microphone", "camera"]} style={{ height: 50 }} />
+</View>);`, pkg.Capabilities{WebView: &pkg.WebView{Hosts: []string{"call.example.com"}, Media: []string{"microphone"}}})
+	app := nsgotest.Start(t, func(cx *core.Scope) core.Node { return tsx.View{Package: p} })
+	app.WaitFor("id:web", 10*time.Second)
+	if v := app.Find("id:web"); v.Web.Source.Src != "https://call.example.com/" || v.Web.Media != core.WebMicrophone {
+		t.Fatalf("the web view loads %q capturing %v", v.Web.Source.Src, v.Web.Media)
+	}
+}
+
 func greeter() *core.Host {
 	h := core.NewHost()
 	h.Handle("greet", func(c *core.HostCall) { c.Resolve("hi " + c.Data.(string)) })

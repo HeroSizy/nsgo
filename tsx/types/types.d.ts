@@ -516,6 +516,9 @@ export interface WebViewHostProps {
   scrollable?: boolean;
   javaScriptEnabled?: boolean;
   allowsBackForwardNavigationGestures?: boolean;
+  /** What the pages may capture through `getUserMedia`; a package needs
+   * them in its `webview` capability's `media` too. */
+  media?: readonly ("microphone" | "camera")[];
   onLoadStart?: (e: WebViewNavigation) => void;
   onLoad?: (e: WebViewNavigation) => void;
   onError?: (e: { message: string }) => void;

@@ -38,6 +38,15 @@ type WebView struct {
 	// BackForwardGestures lets swipes go back and forward where the
 	// platform has them (iOS, macOS trackpads).
 	BackForwardGestures bool
+	// Media is what the pages may capture through getUserMedia:
+	// WebMicrophone, WebCamera or both. The system still asks the user
+	// for each device once, and a page asking for one Media leaves out is
+	// refused. Packages declare their use: NSMicrophoneUsageDescription
+	// and NSCameraUsageDescription in nsgo.yaml's apple.info, without
+	// which Apple's platforms refuse the page, and RECORD_AUDIO and
+	// CAMERA in android.permissions. It applies to the pages' next
+	// requests, and on the web to the next page loaded.
+	Media WebMedia
 	// Class is Tailwind CSS classes, as View's.
 	Class     string
 	Style     Style
@@ -117,7 +126,8 @@ func (t *Tree) mountWebView(cx *Scope, parent *node, w WebView) {
 			InjectedJavaScriptBeforeContent: w.InjectedJavaScriptBeforeContent, UserAgent: w.UserAgent,
 			Headers: cloneWebHeaders(w.Headers), Incognito: w.Incognito,
 			SchemeHandlers: webSchemesOf(cx),
-			NoScroll:       w.NoScroll, NoJavaScript: w.NoJavaScript, BackForwardGestures: w.BackForwardGestures},
+			NoScroll:       w.NoScroll, NoJavaScript: w.NoJavaScript, BackForwardGestures: w.BackForwardGestures,
+			Media: w.Media},
 		loadStart: w.OnLoadStart, load: w.OnLoad, navigation: w.OnNavigationStateChange,
 		loadError: w.OnError, message: w.OnMessage, download: w.OnDownload,
 	}
@@ -136,7 +146,7 @@ func (t *Tree) mountWebView(cx *Scope, parent *node, w WebView) {
 
 // restrictWeb holds c to the Access of n's owner: a source it refuses
 // shows nothing, the platform refuses navigations to hosts it does not
-// allow, and nothing is downloaded.
+// allow and the devices it does not grant, and nothing is downloaded.
 func (t *Tree) restrictWeb(n *node, c *driver.WebConfig) {
 	a := accessOf(n.owner)
 	if a == nil {
@@ -153,7 +163,33 @@ func (t *Tree) restrictWeb(n *node, c *driver.WebConfig) {
 		c.Source.BaseURL = ""
 	}
 	c.Restricted, c.Hosts, c.DownloadDir = true, strings.Join(a.WebHosts(), " "), ""
+	for _, m := range webMediaNames {
+		if c.Media&m.media != 0 && !a.Allows(AccessRequest{Permission: AccessWebView, Resource: m.name, Method: AccessMedia}) {
+			c.Media &^= m.media
+			if !t.rt.refusals[AccessMedia+m.name] {
+				if t.rt.refusals == nil {
+					t.rt.refusals = map[string]bool{}
+				}
+				t.rt.refusals[AccessMedia+m.name] = true
+				log.Printf("nsgo: a web view's %s needs the %q capability's media", m.name, AccessWebView)
+			}
+		}
+	}
 }
+
+// WebMedia is the devices a web view's pages may capture (WebView.Media).
+type WebMedia = driver.WebMedia
+
+const (
+	WebMicrophone = driver.WebMicrophone
+	WebCamera     = driver.WebCamera
+)
+
+// webMediaNames are the devices by their names in AccessRequest.Resource.
+var webMediaNames = [...]struct {
+	media WebMedia
+	name  string
+}{{WebMicrophone, "microphone"}, {WebCamera, "camera"}}
 
 // How far a WebDownload got.
 const (

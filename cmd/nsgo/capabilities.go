@@ -76,6 +76,9 @@ func describeCapabilities(c pkg.Capabilities) []string {
 		if w.Input {
 			line += ", with trusted input"
 		}
+		if len(w.Media) > 0 {
+			line += ", capturing " + strings.Join(w.Media, " and ")
+		}
 		out = append(out, line)
 	}
 	if o := c.OpenURL; o != nil {

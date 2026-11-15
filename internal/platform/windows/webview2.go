@@ -59,6 +59,8 @@ var (
 	iidNavigationCompleted            = parseGUID("d33a35bf-1c49-4f98-93ab-006e0533fe1c")
 	iidWebMessageReceived             = parseGUID("57213f19-00e6-49fa-8e07-898ea01ecbd2")
 	iidWebResourceRequested           = parseGUID("ab00b74c-15f1-4646-80e8-e76341d25d71")
+	iidPermissionRequested            = parseGUID("15e1c6a3-c72a-4df3-91d7-d097fbec6bfd")
+	iidPermissionArgs3                = parseGUID("e61670bc-3dce-4177-86d2-c629ae3cb6ac")
 	iidWeb2                           = parseGUID("9e8f0cf8-e670-4b5e-b2bc-73e061e3184c")
 	iidWeb4                           = parseGUID("20d02d59-6df2-42dc-bd06-f98a694b1302")
 	iidDownloadStarting               = parseGUID("efedc989-c396-41ca-83f7-07f845a55724")
@@ -116,6 +118,7 @@ const (
 	webNavigateToString              = 6
 	webAddNavigationStarting         = 7
 	webAddNavigationCompleted        = 15
+	webAddPermissionRequested        = 23
 	webAddScriptOnDocumentCreated    = 27
 	webRemoveScriptOnDocumentCreated = 28
 	webExecuteScript                 = 29
@@ -164,6 +167,11 @@ const (
 	navigationGetIsSuccess      = 3
 	navigationGetWebErrorStatus = 4
 
+	// ICoreWebView2PermissionRequestedEventArgs, then 3 (after 2)
+	permissionGetKind           = 4
+	permissionPutState          = 7
+	permissionPutSavesInProfile = 12
+
 	// ICoreWebView2WebMessageReceivedEventArgs
 	messageGetJSON      = 4
 	messageTryGetString = 5
@@ -205,6 +213,14 @@ const (
 	pointerPutTouchContactRaw     = 54
 	pointerPutTouchOrientation    = 56
 	pointerPutTouchPressure       = 58
+)
+
+// COREWEBVIEW2_PERMISSION_KIND and COREWEBVIEW2_PERMISSION_STATE
+const (
+	permissionMicrophone = 1
+	permissionCamera     = 2
+	permissionAllow      = 1
+	permissionDeny       = 2
 )
 
 // COREWEBVIEW2_POINTER_EVENT_KIND

@@ -17,7 +17,7 @@ func sameWebConfig(a, b driver.WebConfig) bool {
 		a.UserAgent == b.UserAgent && maps.Equal(a.Headers, b.Headers) && a.Incognito == b.Incognito &&
 		a.NoScroll == b.NoScroll && a.NoJavaScript == b.NoJavaScript &&
 		a.BackForwardGestures == b.BackForwardGestures && a.DownloadDir == b.DownloadDir &&
-		a.Restricted == b.Restricted && a.Hosts == b.Hosts
+		a.Restricted == b.Restricted && a.Hosts == b.Hosts && a.Media == b.Media
 }
 
 // maxRounds bounds the commits OnLayout handlers may cause in one batch.

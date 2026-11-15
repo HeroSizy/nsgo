@@ -817,6 +817,14 @@ public class NsgoView extends FrameLayout implements NsgoEngine.Listener {
      * its own here.
      */
     public void permissionResult(int request, String[] permissions, int[] results) {
+        if (request == MEDIA_PERMISSION_REQUEST) {
+            boolean allowed = results.length > 0;
+            for (int r : results) allowed &= r == android.content.pm.PackageManager.PERMISSION_GRANTED;
+            java.util.List<java.util.function.Consumer<Boolean>> answered = new java.util.ArrayList<>(mediaAsks);
+            mediaAsks.clear();
+            for (java.util.function.Consumer<Boolean> a : answered) a.accept(allowed);
+            return;
+        }
         if (request == Notifications.PERMISSION_REQUEST) {
             Notifications.markAsked(getContext());
             for (long count : permissionAsks) answerPermission(count);
@@ -3018,6 +3026,32 @@ public class NsgoView extends FrameLayout implements NsgoEngine.Listener {
 
     /** The notification permission requests waiting for the system's prompt. */
     private final java.util.ArrayList<Long> permissionAsks = new java.util.ArrayList<>();
+    /** The web pages waiting for the microphone's and the camera's prompt, which one request answers. */
+    private final java.util.ArrayList<java.util.function.Consumer<Boolean>> mediaAsks = new java.util.ArrayList<>();
+    static final int MEDIA_PERMISSION_REQUEST = 0x6e7a;
+
+    /** Asks for a web page's devices; a page asking while a prompt shows waits for its answer, then asks again for what it still lacks. */
+    private void askMediaPermissions(String[] permissions, java.util.function.Consumer<Boolean> answer) {
+        Activity activity = activity();
+        if (activity == null) {
+            answer.accept(false);
+            return;
+        }
+        if (!mediaAsks.isEmpty()) {
+            mediaAsks.add(allowed -> {
+                for (String p : permissions) {
+                    if (getContext().checkSelfPermission(p) != android.content.pm.PackageManager.PERMISSION_GRANTED) {
+                        askMediaPermissions(permissions, answer);
+                        return;
+                    }
+                }
+                answer.accept(true);
+            });
+            return;
+        }
+        mediaAsks.add(answer);
+        activity.requestPermissions(permissions, MEDIA_PERMISSION_REQUEST);
+    }
 
     private void answerPermission(long count) {
         event(Protocol.EVENT_NOTIFICATION, 0, count, 0, 0, "", 0, 0, Notifications.permission(getContext()));
@@ -3306,6 +3340,10 @@ public class NsgoView extends FrameLayout implements NsgoEngine.Listener {
                         if (n.has(Protocol.EVENT_DOWNLOAD))
                             event(Protocol.EVENT_DOWNLOAD, n.id, 0, 0, 0, "", 0, 0, 0, 0, 0, 0, 0, null,
                                     0, 0, false, data, false);
+                    }
+
+                    @Override public void askPermissions(String[] permissions, java.util.function.Consumer<Boolean> answer) {
+                        askMediaPermissions(permissions, answer);
                     }
                 });
                 n.web.appearance(dark(), appearance != 0 || hostAppearance != 0);

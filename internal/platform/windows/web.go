@@ -422,6 +422,35 @@ func (wv *webView) listen() {
 			wv.report(driver.Event{Kind: driver.EventError, Text: why, Navigation: &nav})
 		}
 	}))
+	// getUserMedia: what the config's Media grants, without WebView2's
+	// own prompt; other permissions keep WebView2's handling.
+	web.subscribe(webAddPermissionRequested, newHandler(&iidPermissionRequested, func(_ uintptr, args unsafe.Pointer) {
+		a := (*comObject)(args)
+		var kind int32
+		if wv.closed || failed(a.call(permissionGetKind, uintptr(unsafe.Pointer(&kind)))) {
+			return
+		}
+		var media driver.WebMedia
+		switch kind {
+		case permissionMicrophone:
+			media = driver.WebMicrophone
+		case permissionCamera:
+			media = driver.WebCamera
+		default:
+			return
+		}
+		state := uintptr(permissionDeny)
+		if wv.config.Media.Allows(media) {
+			state = permissionAllow
+		}
+		// WebView2 would keep the answer for the origin in the profile,
+		// which every view of the app shares, whatever their Media.
+		if a3 := a.query(&iidPermissionArgs3); a3 != nil {
+			a3.call(permissionPutSavesInProfile, 0)
+			a3.release()
+		}
+		a.call(permissionPutState, state)
+	}))
 	web.subscribe(webAddWebMessageReceived, newHandler(&iidWebMessageReceived, func(_ uintptr, args unsafe.Pointer) {
 		if wv.closed || !wv.v.events.Has(driver.EventMessage) {
 			return

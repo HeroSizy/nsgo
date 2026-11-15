@@ -29,11 +29,12 @@ type Access interface {
 type AccessRequest struct {
 	// Permission is the capability asked for: AccessNetwork, ...
 	Permission string
-	// Resource is what is asked of it: a URL, or a host handler's name;
-	// "" for a capability with none.
+	// Resource is what is asked of it: a URL, a host handler's name, or
+	// with AccessMedia "microphone" or "camera"; "" for a capability
+	// with none.
 	Resource string
-	// Method is a network request's HTTP method, or AccessInput for a web
-	// view's trusted input.
+	// Method is a network request's HTTP method, AccessInput for a web
+	// view's trusted input, or AccessMedia for what its pages capture.
 	Method string
 }
 
@@ -42,8 +43,9 @@ const (
 	// AccessNetwork is fetch and the images and videos loaded from the
 	// network, by URL.
 	AccessNetwork = "network"
-	// AccessWebView is the pages a web view shows, by URL, and with
-	// AccessInput the trusted input Ref.SendInput gives them.
+	// AccessWebView is the pages a web view shows, by URL, with
+	// AccessInput the trusted input Ref.SendInput gives them, and with
+	// AccessMedia the devices WebView.Media lets them capture.
 	AccessWebView = "webview"
 	// AccessOpenURL is OpenURL, by URL.
 	AccessOpenURL = "openUrl"
@@ -65,8 +67,12 @@ const (
 	AccessHost = "host"
 )
 
-// AccessInput is AccessRequest.Method for a web view's trusted input.
-const AccessInput = "input"
+// AccessInput is AccessRequest.Method for a web view's trusted input,
+// and AccessMedia for the devices its pages capture.
+const (
+	AccessInput = "input"
+	AccessMedia = "media"
+)
 
 // accessKey is where ProvideAccess keeps an owner's Access.
 type accessKey struct{}

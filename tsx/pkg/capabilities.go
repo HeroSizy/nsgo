@@ -57,11 +57,13 @@ type HTTPRule struct {
 	PathPrefixes []string `json:"pathPrefixes,omitempty"`
 }
 
-// WebView says what web views show: pages of Hosts, and with Input the
-// trusted input their refs send, which carries user activation.
+// WebView says what web views show: pages of Hosts, with Input the
+// trusted input their refs send, which carries user activation, and
+// what Media names their pages may capture: "microphone", "camera".
 type WebView struct {
 	Hosts []string `json:"hosts,omitempty"`
 	Input bool     `json:"input,omitempty"`
+	Media []string `json:"media,omitempty"`
 }
 
 // OpenURL allows URLs of Schemes, every scheme when empty.
@@ -94,9 +96,12 @@ func ParseCapabilities(data []byte, strict bool) (c Capabilities, ignored []stri
 			c.Network, unknown, err = parseNetwork(raw, strict)
 		case "webview":
 			c.WebView = &WebView{}
-			unknown, err = decodeKnown(raw, c.WebView, "hosts", "input")
+			unknown, err = decodeKnown(raw, c.WebView, "hosts", "input", "media")
 			if err == nil {
 				err = checkHosts(c.WebView.Hosts)
+			}
+			if err == nil {
+				err = checkWebMedia(c.WebView.Media)
 			}
 		case "openUrl":
 			if string(bytes.TrimSpace(raw)) == "true" {
@@ -226,6 +231,17 @@ func checkHosts(hosts []string) error {
 	return nil
 }
 
+// checkWebMedia refuses a device web pages cannot capture, rather than
+// granting nothing; screens are not among them.
+func checkWebMedia(media []string) error {
+	for _, m := range media {
+		if m != "microphone" && m != "camera" {
+			return fmt.Errorf("webview's media takes microphone and camera, not %q", m)
+		}
+	}
+	return nil
+}
+
 // check refuses a rule that cannot match, rather than granting nothing.
 func (r *HTTPRule) check() error {
 	if !validHostPattern(r.Host) {
@@ -298,8 +314,9 @@ const (
 
 // Allows reports whether c grants permission, a capability's key, for
 // resource: a URL, or a host handler's name. method is a network
-// request's HTTP method, or "input" for a web view's trusted input. It
-// is core.Access's Allows.
+// request's HTTP method, "input" for a web view's trusted input, or
+// "media" for a device its pages capture, resource. It is core.Access's
+// Allows.
 func (c *Capabilities) Allows(permission, resource, method string) bool {
 	switch permission {
 	case capNetwork:
@@ -308,8 +325,11 @@ func (c *Capabilities) Allows(permission, resource, method string) bool {
 		if c.WebView == nil {
 			return false
 		}
-		if method == "input" {
+		switch method {
+		case "input":
 			return c.WebView.Input
+		case "media":
+			return slices.Contains(c.WebView.Media, resource)
 		}
 		u, ok := webURL(resource)
 		return ok && hostAllowed(c.WebView.Hosts, u.Hostname())
