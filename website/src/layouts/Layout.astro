@@ -20,7 +20,13 @@ const copy = copies[lang];
 const base = import.meta.env.BASE_URL;
 const site = Astro.site ?? Astro.url;
 const canonical = new URL(localePath(lang, path), site);
-const image = new URL(`${base}icon.png`, site);
+// The card a shared link shows, the home page's hero in the page's
+// language, from `bun run share-cards`, which takes it from the dev server:
+// only a build needs it.
+const cards = import.meta.glob<{ default: ImageMetadata }>('../assets/share/*.jpg', { eager: true });
+const card = cards[`../assets/share/${lang}.jpg`]?.default;
+if (!card && import.meta.env.PROD) throw new Error(`src/assets/share/${lang}.jpg is missing: run \`bun run share-cards\``);
+const image = new URL(card?.src ?? `${base}icon.png`, site);
 // Only the site's own pages have a Chinese twin to send a visitor to.
 const zhPath = page ? localePath('zh', path) : null;
 ---
@@ -44,9 +50,17 @@ const zhPath = page ? localePath('zh', path) : null;
     <meta property="og:url" content={canonical} />
     <meta property="og:title" content={title} />
     <meta property="og:description" content={description} />
+    <meta property="og:site_name" content="NSGo" />
     <meta property="og:image" content={image} />
-    <meta property="og:image:alt" content="The NSGo mark" />
-    <meta name="twitter:card" content="summary" />
+    <meta property="og:image:type" content="image/jpeg" />
+    <meta property="og:image:width" content={String(card?.width ?? 512)} />
+    <meta property="og:image:height" content={String(card?.height ?? 512)} />
+    <meta property="og:image:alt" content={copy.home.title} />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={title} />
+    <meta name="twitter:description" content={description} />
+    <meta name="twitter:image" content={image} />
+    <meta name="twitter:image:alt" content={copy.home.title} />
     <!-- Umami counts the deployed site's visits, tagged "website" beside the
          gallery's "gallery-web" and "gallery-app"; data-domains skips local
          servers. -->

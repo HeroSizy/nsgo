@@ -14,6 +14,7 @@ bun run preview      # serve dist/
 bun run gallery      # rebuild only the gallery
 bun run live         # rebuild only the docs' apps
 bun run screenshots  # retake the home page's screens of the gallery
+bun run share-cards  # retake the cards a shared link shows
 ```
 
 `astro.config.mjs` fixes the base at `/` for nsgo.dev on GitHub Pages, so the
@@ -100,7 +101,9 @@ buttons, the lit platform, the engine and the call to action, and its skewed spe
 (`SpeedLines.astro`) before section names and behind the hero. Cards are
 soft and rounded, code takes GitHub's light or dark colors with the
 appearance, and behind the hero a WebGL shader (`HeroField.astro`) drifts
-faint blue through its dot grid, still when less motion is asked for. Real
+faint blue through its dot grid, faint under the copy's words, around a glow
+on the platforms' board, from whose lit platform a ring of dots spreads; it
+is still when less motion is asked for. Real
 screens of the gallery show what NSGo makes. The tokens and layout are in
 `src/styles/global.css`.
 
@@ -111,6 +114,13 @@ site's appearance. `bun run screenshots` retakes them all from
 `public/gallery/` (run `bun run gallery` first) with Google Chrome and
 macOS's `sips`; retake them when the gallery's look changes or a language
 is added, giving it a locale in `scripts/screenshots.mjs`.
+
+A shared link shows a large card, `src/assets/share/<lang>.jpg`: the home
+page's hero in the page's language at 1200 by 630 in light, with the mark,
+the title, the lead and the platforms' board. `bun run share-cards` retakes
+them from its own `astro dev` with Google Chrome and `sips`; retake them
+when the hero changes or a language is added. A build fails without its
+language's card.
 
 ## Docs: goals
 

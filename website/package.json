@@ -9,7 +9,8 @@
     "gallery": "bun scripts/build-gallery.mjs",
     "live": "bun scripts/build-live.mjs",
     "typecheck": "astro check",
-    "screenshots": "bun scripts/screenshots.mjs"
+    "screenshots": "bun scripts/screenshots.mjs",
+    "share-cards": "bun scripts/share-cards.mjs"
   },
   "dependencies": {
     "@astrojs/markdown-satteri": "^0.4.8",
