@@ -54,15 +54,14 @@ Run `go tool nsgo check` and `go tool nsgo test` from the repository root, never
 
 Run `bun run build` in `website/` when changing the website; it type-checks the site and rebuilds the gallery it embeds.
 
-Keep the workflows that test code, `test.yml` and `codeql.yml`, on `workflow_dispatch` until the first release; restore their automatic triggers as part of releasing. The rest run on their own: `check.yml`, which builds and vets every target (`go tool nsgo check -target all`) so nothing that breaks the build merges, the website's deployment, pull request triage, labels, `quality.yml`, Dependabot and `release.yml`, which publishes a version tag's changelog section once `test.yml` passes.
+Every workflow runs on its own: `test.yml` and `codeql.yml`, which test and scan the code, `check.yml`, which builds and vets every target (`go tool nsgo check -target all`) so nothing that breaks the build merges, the website's deployment, pull request triage, labels, `quality.yml`, Dependabot and `release.yml`, which publishes a version tag's changelog section once `test.yml` passes.
 
 ## Documentation
 
 - Update a document only when a fact its reader needs changes.
 - Avoid secondary labels and descriptions that restate a heading or value; let the layout explain.
 - Keep each document within its budget and written for its reader.
-- Leave `CHANGELOG.md` as it is until 0.1.0 ships: its `Unreleased` already holds the first version's notes, NSGo's traits, then its features without references, then thanks to everyone who took part (decided by the user, 2026-11-15).
-- After 0.1.0, record completed user-visible outcomes as one-clause `Unreleased` bullets with references such as `(#12 by @alice)`, ordered by type and merging related ones.
+- Record completed user-visible outcomes as one-clause `Unreleased` bullets with references such as `(#12 by @alice)`, ordered by type and merging related ones.
 - Repair documents you touch instead of only appending to them.
 - Keep `docs/public/` and `skills/nsgo/` current with the code: when what an app writes, the tool's commands and flags, testing, packaging or a rule above that app authors share changes, update the public docs and the skill in the same change. The skill, which agents install with `bunx skills add nsgo-dev/nsgo`, holds only what an agent needs to follow and links the docs for the rest; `skills_test.go` checks the names it mentions, and the website generates `llms.txt` from `docs/public/en/`.
 - Keep `README.md` and `README.zh-CN.md` equivalent; everything else, including code comments, is English.

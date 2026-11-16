@@ -1,21 +1,21 @@
 name: CodeQL
 
-# Static analysis of the Go code, the website's and the TSX runtime's JavaScript and TypeScript, and the workflows themselves. Like test.yml it runs only when dispatched until the first release (AGENTS.md); restore the push, pull_request and schedule triggers as part of releasing. Whether its results block a merge is a ruleset's decision, not this file's.
+# Static analysis of the Go code, the website's and the TSX runtime's JavaScript and TypeScript, and the workflows themselves. Whether its results block a merge is a ruleset's decision, not this file's.
 on:
-  # push:
-  #   branches:
-  #     - main
-  #   paths-ignore:
-  #     - "**/*.md"
-  #     - docs/**
-  # pull_request:
-  #   branches:
-  #     - main
-  #   paths-ignore:
-  #     - "**/*.md"
-  #     - docs/**
-  # schedule:
-  #   - cron: "0 15 * * 1"
+  push:
+    branches:
+      - main
+    paths-ignore:
+      - "**/*.md"
+      - docs/**
+  pull_request:
+    branches:
+      - main
+    paths-ignore:
+      - "**/*.md"
+      - docs/**
+  schedule:
+    - cron: "0 15 * * 1"
   workflow_dispatch:
 
 concurrency:

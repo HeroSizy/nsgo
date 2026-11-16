@@ -32,4 +32,4 @@ go tool nsgo test    # 运行所有包的测试
 
 - 更新事实发生变化的文档：NSGo 如何工作写在 `docs/architecture/` 的专题里，应用和组件如何使用它写在 `docs/public/` 的页面里（[文档与网站](docs.md)）。
 - `README.md` 和 `README.zh-CN.md` 保持一致；其余内容都用英文，中文页面位于 `docs/public/zh/`。
-- 0.1.0 发布之后，用户能看到的改动在 `CHANGELOG.md` 的 `Unreleased` 下记一行，并附上引用，例如 `(#12 by @you)`。在此之前不要修改 `CHANGELOG.md`，它已经是首个版本的发布说明。
+- 用户能看到的改动在 `CHANGELOG.md` 的 `Unreleased` 下记一行，并附上引用，例如 `(#12 by @you)`。
