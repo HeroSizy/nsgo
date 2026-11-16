@@ -20,8 +20,9 @@ func (s *surface) reservedRegions() []reservedRegion {
 	if !regionKinds.loaded {
 		regionKinds.loaded = true
 		if c := apple.Class("UIViewReservedRegionKind"); c != 0 {
-			regionKinds.occlusion = objc.ID(c).Send(sel("occlusionRegionKind"))
-			regionKinds.division = objc.ID(c).Send(sel("divisionRegionKind"))
+			// The kinds come autoreleased: keep them for the life of the app.
+			regionKinds.occlusion = objc.ID(c).Send(sel("occlusionRegionKind")).Send(sel("retain"))
+			regionKinds.division = objc.ID(c).Send(sel("divisionRegionKind")).Send(sel("retain"))
 		}
 	}
 	if regionKinds.occlusion == 0 || !objc.Send[bool](s.native, sel("respondsToSelector:"), sel("reservedRegionsOfKind:")) {
