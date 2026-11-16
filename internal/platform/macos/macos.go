@@ -2127,8 +2127,8 @@ func reach(self objc.ID, cmd objc.SEL, p apple.CGPoint) objc.ID {
 		return 0
 	}
 	hit := apple.SendSuperPoint(self, cmd, p)
-	if hit != 0 && hit != self && views[hit] == v {
-		// The holder of v's children, hit where no child is, is v itself.
+	if hit != 0 && hit != self && hit == v.content {
+		// The holder of v's children, hit where no child is, is v itself; an input's editor, also v's, takes its own clicks.
 		hit = self
 	}
 	switch {

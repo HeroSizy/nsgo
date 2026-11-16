@@ -172,3 +172,25 @@ func aHolderIsNoTabStop(t *testing.T) {
 		t.Errorf("the key view loop from a is %q, want %q", got, want)
 	}
 }
+
+// TestAnEditorTakesItsOwnHits hits an input's editor, which is registered as the input's view too, as itself rather than the view, so a click reaches it and focuses it.
+func TestAnEditorTakesItsOwnHits(t *testing.T) { onMain(func() { anEditorTakesItsOwnHits(t) }) }
+
+func anEditorTakesItsOwnHits(t *testing.T) {
+	loadAppKit()
+	native := objc.ID(classView).Send(selNew)
+	defer native.Send(selRelease)
+	native.Send(selSetFrame, apple.Rect(50, 50, 200, 40))
+	field := objc.ID(apple.Class("NSTextField")).Send(selNew)
+	defer field.Send(selRelease)
+	field.Send(selSetFrame, apple.Rect(0, 0, 200, 40))
+	native.Send(selAddSubview, field)
+	v := &view{kind: driver.KindInput, native: native, content: native, surface: &surface{}, input: &input{field: field, host: field}}
+	views[native], views[field] = v, v
+	defer delete(views, native)
+	defer delete(views, field)
+
+	if got := native.Send(sel("hitTest:"), apple.CGPoint{X: 100, Y: 70}); got != field {
+		t.Errorf("a click in the input hit %v, want its editor %v", got, field)
+	}
+}
