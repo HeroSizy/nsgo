@@ -44,6 +44,8 @@ const (
 // to resize it and double-clicks to restore DefaultWidth. SidebarFooter
 // is a bar at the sidebar's bottom, with no line above it.
 //
+// Fixed keeps the sidebar at its width, its edge a line with no handle.
+//
 // Open and Width are the app's, set from OnOpenChange and OnWidthChange.
 // The sidebar and its header are the chrome (Chrome), the content and
 // its header on the page's background, and the right panel on that
@@ -74,6 +76,7 @@ type SidebarShell struct {
 	DefaultWidth       core.Points
 	MinWidth, MaxWidth core.Points
 	ResizeLabel        string
+	Fixed              bool
 	// Right is a panel at the content's end under RightHeader, and
 	// RightOpen whether it shows, with a toggle ending the content's
 	// header, named RightToggleLabel, while OnRightOpenChange is set. The
@@ -229,8 +232,24 @@ func (s SidebarShell) Render(cx *core.Scope) core.Node {
 		line = func() core.Style { return core.Style{} }
 	}
 	var start core.Points
+	var edge core.Node = base.ResizeHandle{Label: s.ResizeLabel, Edge: base.HandleLeading, Disabled: closed,
+		Value: func() core.AccessibilityValue {
+			return core.AccessibilityValue{Now: float32(chosen()), Min: float32(lo), Max: float32(min(hi, env.Window().Width))}
+		},
+		OnDragStart:   func() { start = chosen() },
+		OnDragMove:    func(d core.Points) { resize(min(start+d, env.Window().Width-12)) },
+		OnDragEnd:     func(d core.Points) { resize(min(start+d, env.Window().Width-12)) },
+		OnDoublePress: func() { resize(def) },
+		Style:         core.Style{Margin: core.Edges{Left: 1}}, StyleFunc: line,
+		ThumbStyle: HandleThumb(cx), ThumbStyleFunc: HandleThumbColor(cx)}
+	if s.Fixed {
+		edge = core.View{Style: core.Style{Width: core.Pt(1), Height: core.Pct(100), Margin: core.Edges{Left: 1}}, StyleFunc: line}
+	}
 	handle := core.View{TestID: "sidebar-resize", Disabled: closed, StyleFunc: func() core.Style {
 		st := core.Style{Position: core.Absolute, Top: core.Pt(0), Bottom: core.Pt(0), Width: core.Pt(3), ZIndex: 1}
+		if s.Fixed {
+			st.PointerEvents = core.PointerEventsNone
+		}
 		if open() {
 			// The band centers in the gap before the inset card.
 			st.Left = core.Pt(margin() + width() + margin()/2 - 2)
@@ -241,16 +260,7 @@ func (s SidebarShell) Render(cx *core.Scope) core.Node {
 			st.Visibility = core.VisibilityHidden
 		}
 		return st
-	}, Children: []core.Node{base.ResizeHandle{Label: s.ResizeLabel, Edge: base.HandleLeading, Disabled: closed,
-		Value: func() core.AccessibilityValue {
-			return core.AccessibilityValue{Now: float32(chosen()), Min: float32(lo), Max: float32(min(hi, env.Window().Width))}
-		},
-		OnDragStart:   func() { start = chosen() },
-		OnDragMove:    func(d core.Points) { resize(min(start+d, env.Window().Width-12)) },
-		OnDragEnd:     func(d core.Points) { resize(min(start+d, env.Window().Width-12)) },
-		OnDoublePress: func() { resize(def) },
-		Style:         core.Style{Margin: core.Edges{Left: 1}}, StyleFunc: line,
-		ThumbStyle: HandleThumb(cx), ThumbStyleFunc: HandleThumbColor(cx)}}}
+	}, Children: []core.Node{edge}}
 
 	row := []core.Node{slot, content}
 	if right != nil {

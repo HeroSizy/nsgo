@@ -128,6 +128,24 @@ func TestSidebarShell(t *testing.T) {
 	}
 }
 
+// TestSidebarShellFixed keeps a fixed sidebar at its width, its edge a
+// line with no handle.
+func TestSidebarShellFixed(t *testing.T) {
+	app, p := shell(t, windowEnv, func(cx *core.Scope) core.Node {
+		return SidebarShell{TestID: "shell", ResizeLabel: "Resize sidebar", DefaultWidth: 280, Fixed: true,
+			Sidebar: []core.Node{core.Text{Content: "Inbox"}}, Content: []core.Node{core.Text{Content: "Body"}}}
+	})
+	if got := app.Find("sidebar-panel").Frame.Size.Width; got != 280 {
+		t.Fatalf("sidebar width = %v, want 280", got)
+	}
+	if app.Exists("role:adjustable Resize sidebar") {
+		t.Fatal("a fixed sidebar offers a handle")
+	}
+	if got := within(app.Find("shell"), "sidebar-resize").Children[0].Style.Background; got != p.Border {
+		t.Fatalf("edge = %x, want the line", got)
+	}
+}
+
 // TestSidebarShellInset floats the content as a card with a margin and
 // an edge that go as the sidebar hides, the window controls following it a frame at
 // a time.
