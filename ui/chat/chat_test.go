@@ -9,6 +9,7 @@ import (
 	"github.com/nsgo-dev/nsgo/base"
 	"github.com/nsgo-dev/nsgo/core"
 	"github.com/nsgo-dev/nsgo/icons/lucide"
+	"github.com/nsgo-dev/nsgo/internal/driver"
 	"github.com/nsgo-dev/nsgo/nsgotest"
 	"github.com/nsgo-dev/nsgo/ui"
 )
@@ -496,4 +497,42 @@ func TestFloatingMargin(t *testing.T) {
 	if withFooter != 14 || without != 42 {
 		t.Fatalf("margins %v and %v", withFooter, without)
 	}
+}
+
+// TestQuotaPace marks a row's pace across its bar, in the panel and the
+// summary, and leaves a bar without one alone.
+func TestQuotaPace(t *testing.T) {
+	each(t, func(t *testing.T, e core.Environment) {
+		rows := []QuotaRow{{Label: "5-hour limit", Value: "60% left", Fraction: 0.6, Pace: 0.25}, {Label: "Weekly", Value: "90% left", Fraction: 0.9}}
+		app := start(t, e, func(cx *core.Scope) core.Node {
+			return core.View{Style: core.Style{Width: core.Pt(300)}, Children: []core.Node{
+				core.View{TestID: "panel", Children: []core.Node{Quota{ID: "demo", Title: "Account", Rows: func() []QuotaRow { return rows }}}},
+				core.View{TestID: "summary", Style: core.Style{Direction: core.Row}, Children: []core.Node{QuotaSummary{Label: "Limits", Row: func() QuotaRow { return rows[0] }}}},
+			}}
+		})
+		for _, id := range []string{"panel", "summary"} {
+			var marks []driver.DrawOp
+			for _, v := range quotaViews(app.Find(id)) {
+				for _, op := range v.Ops {
+					if op.Kind == driver.DrawRoundRect {
+						marks = append(marks, op)
+						if bar := v.Frame.Size.Width; op.X+op.W/2 != float32(bar)/4 || op.H != float32(v.Frame.Size.Height) {
+							t.Errorf("%s mark at %v of %v, want a quarter across", id, op.X+op.W/2, bar)
+						}
+					}
+				}
+			}
+			if len(marks) != 1 {
+				t.Errorf("%s draws %d marks, want 1", id, len(marks))
+			}
+		}
+	})
+}
+
+func quotaViews(v *nsgotest.View) []*nsgotest.View {
+	out := []*nsgotest.View{v}
+	for _, c := range v.Children {
+		out = append(out, quotaViews(c)...)
+	}
+	return out
 }

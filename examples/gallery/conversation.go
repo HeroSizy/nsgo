@@ -189,8 +189,8 @@ func conversationDemo(cx *core.Scope) core.Node {
 		Leading:   func(_ *core.Scope, size core.Points) core.Node { return ui.Icon(lucide.Gauge, size, colors.Muted) },
 		Rows: func() []chat.QuotaRow {
 			return []chat.QuotaRow{
-				{Label: tr.ChatQuotaFiveHour(), Detail: tr.ChatQuotaFiveHourReset(), Value: tr.ChatQuotaLeft(63), Fraction: 0.63},
-				{Label: tr.ChatQuotaWeekly(), Detail: tr.ChatQuotaWeeklyReset(), Value: tr.ChatQuotaLeft(18), Fraction: 0.18},
+				{Label: tr.ChatQuotaFiveHour(), Detail: tr.ChatQuotaFiveHourReset(), Value: tr.ChatQuotaLeft(63), Fraction: 0.63, Pace: 0.4},
+				{Label: tr.ChatQuotaWeekly(), Detail: tr.ChatQuotaWeeklyReset(), Value: tr.ChatQuotaLeft(18), Fraction: 0.18, Pace: 0.43},
 				{Label: tr.ChatQuotaCredits(), Value: "$12.40", Fraction: -1},
 			}
 		},

@@ -426,6 +426,23 @@ func chatBar(cx *core.Scope, fraction func() float64, fill func() core.Color, s 
 	}}
 }
 
+// chatPaced marks pace, 0 to 1, across bar with a line in the text's color
+// two points past its edges; zero leaves bar alone.
+func chatPaced(cx *core.Scope, pace float64, bar core.Node) core.Node {
+	if pace <= 0 {
+		return bar
+	}
+	colors := tonesOf(cx)
+	return core.View{Style: core.Style{FlexShrink: 0}, Children: []core.Node{bar,
+		core.Canvas{Style: core.Style{Position: core.Absolute, Top: core.Pt(-2), Bottom: core.Pt(-2), Left: core.Pt(0), Right: core.Pt(0)}, Draw: func(d *core.Drawing, s core.Size) {
+			const width = 2
+			w := float32(s.Width)
+			x := min(max(float32(min(pace, 1))*w-width/2, 0), w-width)
+			d.BeginPath().RoundRect(x, 0, width, float32(s.Height), width/2).SetFillColor(colors.Text()).Fill()
+		}},
+	}}
+}
+
 // chatGauge is a ring on the theme's border, clockwise from twelve o'clock.
 func chatGauge(cx *core.Scope, fraction func() float64, fill func() core.Color) core.Node {
 	colors := tonesOf(cx)
@@ -444,10 +461,13 @@ func chatGauge(cx *core.Scope, fraction func() float64, fill func() core.Color) 
 
 // QuotaRow is one account limit, such as Label "5-hour limit", Detail
 // "Resets in 2h" and Value "63% left". Fraction is the share that remains,
-// 0 to 1; a negative one omits the bar, as for a balance.
+// 0 to 1; a negative one omits the bar, as for a balance. Pace marks on the
+// bar the share that would remain had the limit been used evenly so far,
+// usually the time left as a share of its window, so a fill short of the
+// mark runs out before it resets; zero omits the mark.
 type QuotaRow struct {
 	Label, Detail, Value string
-	Fraction             float64
+	Fraction, Pace       float64
 }
 
 // Quota lists an account's limits with accent bars of what remains,
@@ -538,7 +558,7 @@ func chatQuotaRow(cx *core.Scope, row QuotaRow) core.Node {
 		value,
 	}}}
 	if row.Fraction >= 0 {
-		children = append(children, chatBar(cx, func() float64 { return row.Fraction }, func() core.Color { return chatQuotaColor(cx, row.Fraction) }, core.Style{Height: core.Pt(6)}))
+		children = append(children, chatPaced(cx, row.Pace, chatBar(cx, func() float64 { return row.Fraction }, func() core.Color { return chatQuotaColor(cx, row.Fraction) }, core.Style{Height: core.Pt(6)})))
 	}
 	return core.View{Style: core.Style{MinWidth: core.Pt(0), Gap: 7}, Children: children}
 }
@@ -591,7 +611,7 @@ func (q QuotaSummary) Render(cx *core.Scope) core.Node {
 		if row.Detail != "" {
 			nodes = append(nodes, ui.Text(row.Detail, 11.5, ui.Regular, colors.Muted))
 		}
-		return append(core.Group(nodes), chatBar(cx, func() float64 { return row.Fraction }, colors.Accent, core.Style{Width: core.Pt(48), Height: core.Pt(4), CornerRadius: 2}))
+		return append(core.Group(nodes), chatPaced(cx, row.Pace, chatBar(cx, func() float64 { return row.Fraction }, colors.Accent, core.Style{Width: core.Pt(48), Height: core.Pt(4), CornerRadius: 2})))
 	})
 	var panel []core.Node
 	for _, quota := range q.Quotas {

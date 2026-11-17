@@ -15,6 +15,7 @@
 - Add `desktop.CanSetWindowLevel` and `desktop.CanPlaceWindows`, and keep a floating window above the others on Linux under X11, so a Wayland app can tell that its window is neither stacked nor placed (#573 by @houko).
 - Add `WebView.PinchZoom`, `Ref.Load` and the platform's `Domain` and `Code` on `WebError`; on Windows, Ctrl with the wheel or with + and - zooms a web view only with `PinchZoom` (#233 by @houko).
 - Add `chat.Composer.AutoFocus`, which focuses the editor as the composer mounts.
+- Add `chat.QuotaRow.Pace`, which marks on a limit's bar in `chat.Quota` and `chat.QuotaSummary` what would remain had it been used evenly, so a fill short of the mark runs out before it resets.
 - Report `Video.OnError` instead of an opaque picture for a local video whose alpha the platform cannot keep: WebM with alpha on macOS and iOS, any clip with alpha on Windows until Media Foundation's alpha output is checked, and on Linux HEVC with alpha, or VP8 and VP9 with alpha without GStreamer's codecalpha plug-in; add `MediaError.Reason`, `MediaErrorAlphaUnsupported` for these, so an app can fall back to its own decoder without matching the message (#569 by @houko).
 - Stop reporting a web view load that was stopped, replaced or turned into a download to `OnError` on Apple platforms and Windows (#233 by @houko).
 - Keep a view's own outer shadows and outline outside its `Overflow: Hidden` clip on Apple for views, images and macOS scroll views, as CSS does (#238 by @houko).
