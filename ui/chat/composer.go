@@ -39,6 +39,8 @@ type Composer struct {
 	OnDropFiles func(uris []string)
 	// OnPaste hears what the user pastes, images and files included.
 	OnPaste func(core.PasteEvent)
+	// AutoFocus focuses the editor as the composer mounts, as core.Input's.
+	AutoFocus bool
 	// SendDisabled holds Send while attachments are prepared, and
 	// StopDisabled keeps Stop shown but inactive. Editing stays on.
 	SendDisabled, StopDisabled func() bool
@@ -86,7 +88,7 @@ func (m Composer) Render(cx *core.Scope) core.Node {
 	if cx.Env().Desktop() {
 		submit = core.SubmitBehaviorSubmit
 	}
-	editor := base.Input{Value: draft, OnChange: m.OnDraftChange, Multiline: true, SubmitBehavior: submit, Label: m.Label, Placeholder: m.Placeholder, PlaceholderFunc: m.PlaceholderFunc, TestID: "composer", Suggest: suggest,
+	editor := base.Input{Value: draft, OnChange: m.OnDraftChange, Multiline: true, SubmitBehavior: submit, Label: m.Label, Placeholder: m.Placeholder, PlaceholderFunc: m.PlaceholderFunc, TestID: "composer", Suggest: suggest, AutoFocus: m.AutoFocus,
 		OnSubmit:            func(string) { send() },
 		OnPaste:             m.OnPaste,
 		OnFocus:             func() { focused.Set(true) },

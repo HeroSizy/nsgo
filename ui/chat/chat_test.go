@@ -143,6 +143,18 @@ func TestComposer(t *testing.T) {
 	})
 }
 
+// TestComposerAutoFocus focuses the editor as the composer mounts only with AutoFocus.
+func TestComposerAutoFocus(t *testing.T) {
+	for _, auto := range []bool{false, true} {
+		app := start(t, desktopEnv, func(cx *core.Scope) core.Node {
+			return Composer{Label: "Message", SendLabel: "Send", AutoFocus: auto}
+		})
+		if focused := app.Find("id:composer").Focused; focused != auto {
+			t.Fatalf("AutoFocus %v: focused %v", auto, focused)
+		}
+	}
+}
+
 // suggestStage is a composer whose Suggest offers the files a query starts, README.md and release.md unless given others, and whose OnSend clears the draft, beside another field.
 type suggestStage struct {
 	draft                     *core.Signal[string]
