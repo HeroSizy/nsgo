@@ -191,16 +191,18 @@ func (v FloatingConversation) Render(cx *core.Scope) core.Node {
 					return core.Style{Height: core.Pt(s.composer.Get() + 22)}
 				}),
 			}},
-		// The transcript blurs behind the footer and the card's lower half.
-		core.View{EdgeBar: core.EdgeBar{Scroll: s.scroll, Side: core.SideBottom}, PointerEvents: core.PointerEventsNone,
+		// The transcript blurs behind the footer and the card's lower half,
+		// never above the composer, so with no card, such as once a
+		// conversation ends, its last lines stay sharp at the end.
+		core.View{EdgeBar: core.EdgeBar{Scroll: s.scroll, Side: core.SideBottom}, PointerEvents: core.PointerEventsNone, TestID: "chat-edge",
 			Style: core.Style{Position: core.Absolute, Left: core.Pt(0), Right: core.Pt(0), Bottom: core.Pt(0)},
 			StyleFunc: func() core.Style {
-				return core.Style{Height: core.Pt(floatingEdge(cx, s.footer.Get(), s.card.Get()))}
+				return core.Style{Height: core.Pt(min(s.composer.Get(), floatingEdge(cx, s.footer.Get(), s.card.Get())))}
 			}},
 		core.Show{When: func() bool { return !s.AtLatest() }, Then: func(cx *core.Scope) core.Node {
 			return chatJumpButton(cx, s, v.JumpLabel, func() core.Points { return s.composer.Get() + 12 }, true)
 		}},
-		core.View{PointerEvents: core.PointerEventsBoxNone, OnLayout: func(b core.Bounds) { s.composer.Set(b.Size.Height) },
+		core.View{PointerEvents: core.PointerEventsBoxNone, OnLayout: func(b core.Bounds) { s.composer.Set(b.Size.Height) }, TestID: "chat-composer",
 			Style: core.Style{Position: core.Absolute, Left: core.Pt(0), Right: core.Pt(0), Bottom: core.Pt(0), AlignItems: core.AlignCenter},
 			StyleFunc: func() core.Style {
 				return core.Style{Padding: core.Edges{Right: 20, Bottom: FloatingMargin(cx, s.footer.Get()), Left: 20}}

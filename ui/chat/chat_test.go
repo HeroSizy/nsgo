@@ -143,6 +143,31 @@ func TestComposer(t *testing.T) {
 	})
 }
 
+// TestFloatingEdgeStaysUnderComposer blurs the transcript behind a
+// composer, and no higher than what stands in its place once it goes.
+func TestFloatingEdgeStaysUnderComposer(t *testing.T) {
+	each(t, func(t *testing.T, e core.Environment) {
+		var composing *core.Signal[bool]
+		app := start(t, e, func(cx *core.Scope) core.Node {
+			composing = core.NewSignal(cx, true)
+			state := NewConversationState(cx)
+			return FloatingConversation{State: state, JumpLabel: "Latest", Children: []core.Node{core.Text{Content: "Done"}},
+				Composer: []core.Node{core.Show{When: composing.Get, Then: func(*core.Scope) core.Node {
+					return Composer{Label: "Message", SendLabel: "Send", Glass: true, State: state}
+				}}}}
+		})
+		if h := app.Find("id:chat-edge").Frame.Size.Height; h <= 0 {
+			t.Fatalf("edge %v behind a composer", h)
+		}
+		composing.Set(false)
+		app.Settle()
+		edge, room := app.Find("id:chat-edge").Frame.Size.Height, app.Find("id:chat-composer").Frame.Size.Height
+		if edge > room {
+			t.Fatalf("edge %v above the composer's room %v", edge, room)
+		}
+	})
+}
+
 // TestComposerAutoFocus focuses the editor as the composer mounts only with AutoFocus.
 func TestComposerAutoFocus(t *testing.T) {
 	for _, auto := range []bool{false, true} {
