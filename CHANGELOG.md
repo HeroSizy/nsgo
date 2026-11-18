@@ -24,7 +24,7 @@
 - Keep a scroll view still as a text selection starts in it on macOS, rather than scrolling it toward where the last drag ended or the window's corner.
 - Open the output directory with `nsgo build -open` when nsgo leads its terminal's session, as in an app's terminal without a shell, instead of losing the opener as nsgo exits (#672).
 - Show a bundled macOS app's Dock badge without the notification permission until the app uses notifications (#190 by @houko).
-- Accept a bare OS name in `nsgo check -target`, `nsgo build -target` and `nsgo.yaml`'s `build.targets`, and an arch-qualified name in `nsgo test -target`, so the commands take each other's target spellings (#589 by @houko).
+- Accept a bare OS name in `nsgo check -target`, `nsgo build -target` and `nsgo.yaml`'s `build.targets`, and an arch-qualified name in `nsgo test -target`, so the commands take each other's target spellings (#593 by @dhruv1220).
 
 ## [0.1.0] - 2026-11-16
 
