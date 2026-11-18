@@ -203,7 +203,10 @@ func dirSize(dir string) int64 {
 }
 
 // openDir shows dir in the host's file manager. A build is complete
-// without it, so failing to open is only a warning.
+// without it, so failing to open is only a warning. It waits for the
+// opener, which returns once the system has the request: when nsgo
+// leads its terminal's session, the opener would otherwise be hung up
+// as nsgo exits, before it hands dir on.
 func openDir(dir string) {
 	note("open %s", rel(dir))
 	opener := "xdg-open"
@@ -213,7 +216,13 @@ func openDir(dir string) {
 	case "windows":
 		opener = "explorer"
 	}
-	if err := exec.Command(opener, dir).Start(); err != nil {
+	err := exec.Command(opener, dir).Run()
+	// explorer exits with 1 even when it opens dir.
+	var exit *exec.ExitError
+	if runtime.GOOS == "windows" && errors.As(err, &exit) {
+		err = nil
+	}
+	if err != nil {
 		warn("could not open %s: %v", rel(dir), err)
 	}
 }
