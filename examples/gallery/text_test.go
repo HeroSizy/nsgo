@@ -2,12 +2,15 @@ package main
 
 import (
 	_ "embed"
+	"fmt"
+	"strings"
 	"testing"
 	"time"
 
 	"github.com/nsgo-dev/nsgo/core"
 	"github.com/nsgo-dev/nsgo/internal/driver"
 	"github.com/nsgo-dev/nsgo/nsgotest"
+	"github.com/nsgo-dev/nsgo/ui"
 )
 
 //go:embed resources/fonts/Pacifico-Regular.ttf
@@ -36,5 +39,41 @@ func TestARegisteredFontMeasures(t *testing.T) {
 			t.Fatalf("the registered font's text measures %v, as the fallback's does", size("registered"))
 		}
 		time.Sleep(10 * time.Millisecond)
+	}
+}
+
+// TestSelectingInAScrollViewKeepsItsPlace selects inside a scroll view under nsgo test -target and leaves it where it was: only a drag past its edge scrolls it, never where the last drag ended before this one's first move.
+func TestSelectingInAScrollViewKeepsItsPlace(t *testing.T) {
+	if nsgotest.Target() == "" {
+		t.Skip("a headless drag is a finger's, which scrolls")
+	}
+	app := nsgotest.Start(t, func(cx *core.Scope) core.Node {
+		var texts []core.Node
+		for i := range 40 {
+			texts = append(texts, core.Text{TestID: fmt.Sprint("line-", i), Content: fmt.Sprint(i, " ", strings.Repeat("Selectable words ", 8))})
+		}
+		// A bar under the scroll view, as a chat's composer, puts the window's corner past its edge, and its spinner keeps the frame clock running.
+		return core.View{Style: core.Style{FlexGrow: 1}, Children: []core.Node{
+			core.Scroll{TestID: "scroll", Style: core.Style{FlexGrow: 1, FlexBasis: core.Pt(0)}, Children: []core.Node{
+				core.View{Selectable: true, Style: core.Style{Padding: core.All(16), Gap: 12}, Children: texts},
+			}},
+			core.View{Style: core.Style{Height: core.Pt(40), AlignItems: core.AlignCenter, JustifyContent: core.JustifyCenter}, Children: []core.Node{ui.Spinner{Size: 16}}},
+		}}
+	}, nsgotest.Size(400, 500))
+	app.Scroll("id:scroll", 600)
+	offset := func() core.Points { return app.Find("id:scroll").Offset.Y }
+	at := offset()
+	line := ""
+	for i := range 40 {
+		if y := app.Find(fmt.Sprint("id:line-", i)).Bounds().Origin.Y; y > 150 && y < 250 {
+			line = fmt.Sprint("id:line-", i)
+			break
+		}
+	}
+	for range 2 {
+		app.Drag(line, core.Point{X: 10, Y: 10}, core.Point{X: 20, Y: -20}, core.Point{X: 30, Y: -40})
+		if got := offset(); got != at {
+			t.Fatalf("selecting scrolled the view from %v to %v", at, got)
+		}
 	}
 }

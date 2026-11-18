@@ -221,7 +221,10 @@ func (s *surface) selectPress(event objc.ID) bool {
 	extend := objc.Send[uint](event, sel("modifierFlags"))&shift != 0
 	sl.model.Press(sl, sl.point(event), objc.Send[int](event, sel("clickCount")), extend)
 	sl.down, sl.dragging, sl.press = true, press == nil, press
+	// The drag starts where the press is: the frame clock may scroll
+	// before the first drag event, from where the last drag ended.
 	sl.from = objc.Send[apple.CGPoint](event, selLocationInWindow)
+	sl.at = sl.from
 	sl.show(old)
 	s.window.Send(selMakeFirstResponer, s.native)
 	return press == nil

@@ -21,6 +21,7 @@
 - Keep a view's own outer shadows and outline outside its `Overflow: Hidden` clip on Apple for views, images and macOS scroll views, as CSS does (#238 by @houko).
 - Lay out and draw a Windows window at each size as a drag resizes it, as macOS does, instead of stretching the last frame to the window.
 - Keep `chat.FloatingConversation`'s bottom edge blur within its composer's room, so a transcript without a composer ends sharp.
+- Keep a scroll view still as a text selection starts in it on macOS, rather than scrolling it toward where the last drag ended or the window's corner.
 - Show a bundled macOS app's Dock badge without the notification permission until the app uses notifications (#190 by @houko).
 
 ## [0.1.0] - 2026-11-16
