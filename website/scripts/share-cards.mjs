@@ -62,8 +62,11 @@ async function capture(url, locale, out) {
     const pending = new Map();
     socket.onmessage = (event) => {
       const message = JSON.parse(String(event.data));
-      pending.get(message.id)?.(message.result);
-      pending.delete(message.id);
+      const resolve = pending.get(message.id);
+      if (typeof resolve === 'function') {
+        pending.delete(message.id);
+        resolve(message.result);
+      }
     };
     const send = (method, params = {}) =>
       new Promise((resolve) => {

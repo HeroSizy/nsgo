@@ -14,6 +14,7 @@ import (
 	"path/filepath"
 	"runtime"
 	"slices"
+	"strconv"
 	"strings"
 	"sync"
 	"text/template"
@@ -1165,7 +1166,7 @@ func pageCSS(p *project) []byte {
 // zooming the page under a pinch.
 func mountJS(loader, config string) []byte {
 	return []byte(`// Written by nsgo: the page runs the app.
-import { mount } from "./` + loader + `";
+import { mount } from ` + strconv.Quote("./"+loader) + `;
 document.addEventListener("gesturestart", (e) => e.preventDefault());
 mount(null, null, { config: ` + config + ` }).catch((e) => {
   console.error(e);

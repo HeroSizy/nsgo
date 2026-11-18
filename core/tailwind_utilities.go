@@ -1473,7 +1473,7 @@ func (t *tailwindTheme) font(v string, _ bool) (classDecl, bool) {
 	}
 	if a, ok := arbitrary(v); ok {
 		a = strings.TrimPrefix(a, "weight:")
-		if n, err := strconv.Atoi(a); err == nil {
+		if n, err := strconv.ParseUint(a, 10, 16); err == nil {
 			return set1(func(s *Style) { s.FontWeight = FontWeight(n) }), false
 		}
 		a = strings.TrimPrefix(a, "family-name:")

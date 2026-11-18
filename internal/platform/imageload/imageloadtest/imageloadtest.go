@@ -37,6 +37,7 @@ func CheckHTTP(t *testing.T, get func(ctx context.Context, url string, header im
 		default:
 			w.Header().Set("ETag", `"v1"`)
 			w.Header().Add("Cache-Control", "max-age=60")
+			w.Header().Set("Content-Type", "text/plain")
 			w.Write([]byte(r.Header.Get("If-None-Match") + " png"))
 		}
 	}))

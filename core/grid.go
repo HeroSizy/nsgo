@@ -1,6 +1,7 @@
 package core
 
 import (
+	"math"
 	"strconv"
 
 	"github.com/nsgo-dev/nsgo/internal/layout"
@@ -78,7 +79,7 @@ type GridPlacement struct {
 func GridLine(n int) GridPlacement { return GridPlacement{line: clampInt16(n)} }
 
 // GridSpan makes an item span n tracks.
-func GridSpan(n int) GridPlacement { return GridPlacement{span: uint16(min(max(n, 1), 0xFFFF))} }
+func GridSpan(n int) GridPlacement { return GridPlacement{span: clampSpan(n)} }
 
 // GridNamed places an item at the nth line called name (the first when n is
 // 0); with a span it spans until the nth such line.
@@ -88,11 +89,32 @@ func GridNamed(name string, n int) GridPlacement {
 
 // Span returns p spanning n named lines rather than placed at one.
 func (p GridPlacement) Span(n int) GridPlacement {
-	p.span, p.line = uint16(min(max(n, 1), 0xFFFF)), 0
+	p.span, p.line = clampSpan(n), 0
 	return p
 }
 
-func clampInt16(n int) int16 { return int16(min(max(n, -0x8000), 0x7FFF)) }
+// The clamps compare before converting, rather than through min and max,
+// so code scanning sees the bounds.
+
+func clampInt16(n int) int16 {
+	if n < math.MinInt16 {
+		return math.MinInt16
+	}
+	if n > math.MaxInt16 {
+		return math.MaxInt16
+	}
+	return int16(n)
+}
+
+func clampSpan(n int) uint16 {
+	if n < 1 {
+		return 1
+	}
+	if n > math.MaxUint16 {
+		return math.MaxUint16
+	}
+	return uint16(n)
+}
 
 func (p GridPlacement) layout() layout.GridPlacement {
 	switch {

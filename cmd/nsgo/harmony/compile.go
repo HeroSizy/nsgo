@@ -227,6 +227,9 @@ func unzipHAP(src, dst string) error {
 			strings.HasPrefix(f.Name, "resources/rawfile/") {
 			continue
 		}
+		if !filepath.IsLocal(f.Name) {
+			return fmt.Errorf("%s: %q leaves the archive", src, f.Name)
+		}
 		rc, err := f.Open()
 		if err != nil {
 			return err

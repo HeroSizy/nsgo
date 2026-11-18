@@ -414,7 +414,7 @@ func versions(nsgo string) map[string]string {
 		v["nsgo"] = strings.TrimSpace(string(out))
 	}
 	if b, err := os.ReadFile("go.mod"); err == nil {
-		if m := regexp.MustCompile(`github.com/egoist/mygo (v\S+)`).FindSubmatch(b); m != nil {
+		if m := regexp.MustCompile(`github\.com/egoist/mygo (v\S+)`).FindSubmatch(b); m != nil {
 			v["mygo"] = string(m[1])
 		}
 	}

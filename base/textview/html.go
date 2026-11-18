@@ -323,8 +323,8 @@ func (r *htmlReader) list(n *html.Node, ordered bool, depth int) List {
 	if ordered {
 		l.Start = 1
 		if s, ok := attr(n, "start"); ok {
-			if v, err := strconv.ParseInt(strings.TrimSpace(s), 10, 64); err == nil {
-				l.Start = int(min(max(v, 0), 1<<31-1))
+			if v, err := strconv.Atoi(strings.TrimSpace(s)); err == nil {
+				l.Start = min(max(v, 0), 1<<31-1)
 			}
 		}
 	}

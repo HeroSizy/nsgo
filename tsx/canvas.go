@@ -567,7 +567,7 @@ func parseFont(s string) core.Font {
 			}
 			return f
 		default:
-			if n, err := strconv.Atoi(word); err == nil {
+			if n, err := strconv.ParseUint(word, 10, 16); err == nil {
 				f.Weight = core.FontWeight(n)
 			}
 		}
