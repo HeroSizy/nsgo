@@ -144,9 +144,9 @@ func TestComposer(t *testing.T) {
 	})
 }
 
-// TestFloatingEdgeStaysUnderComposer blurs the transcript behind a
-// composer, and no higher than what stands in its place once it goes.
-func TestFloatingEdgeStaysUnderComposer(t *testing.T) {
+// TestFloatingEdgeFollowsComposer blurs the transcript behind a composer,
+// and not at all once it goes.
+func TestFloatingEdgeFollowsComposer(t *testing.T) {
 	each(t, func(t *testing.T, e core.Environment) {
 		var composing *core.Signal[bool]
 		app := start(t, e, func(cx *core.Scope) core.Node {
@@ -162,9 +162,8 @@ func TestFloatingEdgeStaysUnderComposer(t *testing.T) {
 		}
 		composing.Set(false)
 		app.Settle()
-		edge, room := app.Find("id:chat-edge").Frame.Size.Height, app.Find("id:chat-composer").Frame.Size.Height
-		if edge > room {
-			t.Fatalf("edge %v above the composer's room %v", edge, room)
+		if app.Exists("id:chat-edge") {
+			t.Fatal("edge without a composer")
 		}
 	})
 }

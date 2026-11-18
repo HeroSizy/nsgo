@@ -188,6 +188,10 @@ func (m Composer) Render(cx *core.Scope) core.Node {
 			return s
 		}, Children: body}
 	if m.State != nil {
+		// The transcript's edge blurs only while a composer stands over it.
+		composers := m.State.composers
+		composers.Update(func(n int) int { return n + 1 })
+		cx.Cleanup(func() { composers.Update(func(n int) int { return n - 1 }) })
 		// Only a single empty line with no attachments shows the card at rest.
 		card.OnLayout = func(b core.Bounds) {
 			if core.Untracked(cx, func() bool { return draft() == "" && !is(m.HasAttachments) }) {

@@ -25,13 +25,14 @@ type ConversationState struct {
 	scroll                 *core.Ref
 	following              *core.Signal[bool]
 	composer, card, footer *core.Signal[core.Points]
+	composers              *core.Signal[int]
 	lastY                  core.Points
 }
 
 // NewConversationState makes a state at the latest turn.
 func NewConversationState(cx *core.Scope) *ConversationState {
 	return &ConversationState{scroll: &core.Ref{}, following: core.NewSignal(cx, true), composer: core.NewSignal(cx, core.Points(140)),
-		card: core.NewSignal(cx, chatRestingCard), footer: core.NewSignal(cx, core.Points(0))}
+		card: core.NewSignal(cx, chatRestingCard), footer: core.NewSignal(cx, core.Points(0)), composers: core.NewSignal(cx, 0)}
 }
 
 // AtLatest reports whether the transcript follows its end.
@@ -203,14 +204,16 @@ func (v FloatingConversation) Render(cx *core.Scope) core.Node {
 					return core.Style{Height: core.Pt(s.composer.Get() + 22)}
 				}),
 			}},
-		// The transcript blurs behind the footer and the card's lower half,
-		// never above the composer, so with no card, such as once a
+		// The transcript blurs behind the footer and the card's lower half
+		// only while a composer stands there, so with none, such as once a
 		// conversation ends, its last lines stay sharp at the end.
-		core.View{EdgeBar: core.EdgeBar{Scroll: s.scroll, Side: core.SideBottom}, PointerEvents: core.PointerEventsNone, TestID: "chat-edge",
-			Style: core.Style{Position: core.Absolute, Left: core.Pt(0), Right: core.Pt(0), Bottom: core.Pt(0)},
-			StyleFunc: func() core.Style {
-				return core.Style{Height: core.Pt(min(s.composer.Get(), floatingEdge(cx, s.footer.Get(), s.card.Get())))}
-			}},
+		core.Show{When: func() bool { return s.composers.Get() > 0 }, Then: func(cx *core.Scope) core.Node {
+			return core.View{EdgeBar: core.EdgeBar{Scroll: s.scroll, Side: core.SideBottom}, PointerEvents: core.PointerEventsNone, TestID: "chat-edge",
+				Style: core.Style{Position: core.Absolute, Left: core.Pt(0), Right: core.Pt(0), Bottom: core.Pt(0)},
+				StyleFunc: func() core.Style {
+					return core.Style{Height: core.Pt(floatingEdge(cx, s.footer.Get(), s.card.Get()))}
+				}}
+		}},
 		core.Show{When: func() bool { return !s.AtLatest() }, Then: func(cx *core.Scope) core.Node {
 			return chatJumpButton(cx, s, v.JumpLabel, func() core.Points { return s.composer.Get() + 12 }, true)
 		}},

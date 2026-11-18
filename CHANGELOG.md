@@ -22,7 +22,7 @@
 - Stop reporting a web view load that was stopped, replaced or turned into a download to `OnError` on Apple platforms and Windows (#233 by @houko).
 - Keep a view's own outer shadows and outline outside its `Overflow: Hidden` clip on Apple for views, images and macOS scroll views, as CSS does (#238 by @houko).
 - Lay out and draw a Windows window at each size as a drag resizes it, as macOS does, instead of stretching the last frame to the window.
-- Keep `chat.FloatingConversation`'s bottom edge blur within its composer's room, so a transcript without a composer ends sharp.
+- Show `chat.FloatingConversation`'s bottom edge blur only while a composer is shown, so a transcript without one ends sharp.
 - Keep a `base/terminal` view following output that comes faster than frames instead of leaving the end, and follow it again once scrolled back to the end (#686).
 - Keep a multiline `Input`'s scroll bar along its edges on macOS and iOS, its padding insetting the text, which scrolls under it (#701).
 - Keep a scroll view still as a text selection starts in it on macOS, rather than scrolling it toward where the last drag ended or the window's corner.
