@@ -392,6 +392,10 @@ type window struct {
 	skipChar bool
 	engine   *engine.Engine
 	batches  queue.Batches
+	// applying is set while batches are applied; resized is the commit
+	// at a size resize stopped waiting for, until it lands.
+	applying bool
+	resized  <-chan struct{}
 	scale    float64 // pixels per point
 	// placing is set while setWindowPosAt moves the window to pixels it chose (wmDPIChanged).
 	placing bool
@@ -1114,6 +1118,60 @@ func (w *window) RequestFrame() {
 	w.frameWanted.Store(true)
 	if !w.clockOn.Load() {
 		postMessageW.Call(w.hwnd, wmFrame, 0, 0)
+	}
+}
+
+// applyBatches applies the batches the engine has sent, in order, unless
+// a batch is being applied: one can resize the window.
+func (w *window) applyBatches() {
+	if w.applying {
+		return
+	}
+	w.applying = true
+	defer func() { w.applying = false }()
+	done := w.measuring(true)
+	for _, b := range w.batches.Drain() {
+		if w.hud != nil && !b.Sent.IsZero() {
+			w.hud.monitor.RecordLatency(time.Since(b.Sent))
+		}
+		driver.Apply(b, w.apply)
+	}
+	done()
+}
+
+// resizeWait is the longest the main thread waits for the layout at a new
+// size, the one place it waits for the engine, as the macOS backend does:
+// DWM shows the window at its new size at once, around the last frame
+// otherwise.
+const resizeWait = 16 * time.Millisecond
+
+// resize tells the engine the window's new size and waits, at most
+// resizeWait, for the commit laid out at it, which it applies and draws
+// before the message returns. An engine that missed the deadline is
+// not waited for again until that commit lands, so a busy app resizes as
+// before.
+func (w *window) resize(size driver.Size) {
+	if w.resized != nil {
+		select {
+		case <-w.resized:
+			w.resized = nil
+		default:
+		}
+	}
+	done := w.engine.ResizeAndWait(size, driver.Geometry{})
+	if w.resized != nil || w.applying {
+		return
+	}
+	t := time.NewTimer(resizeWait)
+	defer t.Stop()
+	select {
+	case <-done:
+		w.applyBatches()
+		if visible, _, _ := isWindowVisible.Call(w.hwnd); visible != 0 {
+			w.frame()
+		}
+	case <-t.C:
+		w.resized = done
 	}
 }
 
@@ -2071,6 +2129,27 @@ func background(v *view) driver.Color {
 	return driver.RGB(0xffffff)
 }
 
+// edgeColor is the opaque background of the topmost view that fills the
+// window, the root or one of its descendants each filling its parent,
+// or the frame's clear color: what a frame shows along its right and
+// bottom edges.
+func (w *window) edgeColor() driver.Color {
+	c := driver.RGB(0xffffff)
+	for v := w.view(w.root); v != nil; {
+		if v.style.Background&0xff == 0xff {
+			c = v.style.Background
+		}
+		var top *view
+		for _, k := range v.children {
+			if k != nil && k.frame.Origin == (driver.Point{}) && k.frame.Size == v.frame.Size {
+				top = k
+			}
+		}
+		v = top
+	}
+	return c
+}
+
 // pressOutside reports a press at x, y in the client area to each view
 // that asks for presses outside it and does not contain the point. It
 // does not take the press: the caller handles it as before.
@@ -2177,14 +2256,7 @@ func wndProc(hwnd uintptr, message uint32, wParam, lParam uintptr) uintptr {
 	}
 	switch message {
 	case wmApply:
-		done := w.measuring(true)
-		for _, b := range w.batches.Drain() {
-			if w.hud != nil && !b.Sent.IsZero() {
-				w.hud.monitor.RecordLatency(time.Since(b.Sent))
-			}
-			driver.Apply(b, w.apply)
-		}
-		done()
+		w.applyBatches()
 		return 0
 	case wmRun:
 		w.runTasks()
@@ -2268,7 +2340,7 @@ func wndProc(hwnd uintptr, message uint32, wParam, lParam uintptr) uintptr {
 			size := w.point(width, height)
 			switch {
 			case w.engine != nil:
-				w.engine.Resize(driver.Size{Width: size.X, Height: size.Y}, driver.Geometry{})
+				w.resize(driver.Size{Width: size.X, Height: size.Y})
 			case width > 0 && height > 0:
 				w.startEngine(w.app, w.opts, driver.Size{Width: size.X, Height: size.Y})
 			}

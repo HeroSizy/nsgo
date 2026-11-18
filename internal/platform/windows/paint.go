@@ -518,6 +518,7 @@ func (w *window) frame() {
 			return
 		}
 	}
+	w.swap.setEdge(w.edgeColor())
 	if hr := w.swap.present(changed, changedAll); hr == dxgiErrDeviceRemoved || hr == dxgiErrDeviceReset {
 		w.lost()
 		return

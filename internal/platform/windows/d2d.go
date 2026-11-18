@@ -51,7 +51,10 @@ const (
 	swapPresent       = 8
 	swapGetBuffer     = 9
 	swapResizeBuffers = 13
-	swapPresent1      = 22
+
+	// IDXGISwapChain1
+	swapPresent1           = 22
+	swapSetBackgroundColor = 25
 
 	// ID2D1Factory, ID2D1Factory1
 	d2dFactoryCreateRoundedRectangleGeometry = 6
@@ -165,6 +168,7 @@ const (
 	d3dSDKVersion              = 7
 	dxgiFormatBGRA             = 87 // DXGI_FORMAT_B8G8R8A8_UNORM
 	dxgiUsageTarget            = 0x20
+	dxgiScalingNone            = 1
 	dxgiFlipSequential         = 3
 	dxgiFlipDiscard            = 4
 	dxgiAlphaIgnore            = 3

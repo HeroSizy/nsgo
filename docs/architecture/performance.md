@@ -126,6 +126,7 @@ As NSH's, a frame draws only what changed since its back buffer was drawn and pr
 - At the frame, a walk down the paths to the queued views records where each now paints (`measure`, placed as `painter.draw` places them, clipped by the ancestors that clip), and their subtrees' new areas join the old ones.
 - The swap chain is `FLIP_SEQUENTIAL` with two buffers, so a frame draws its own areas and the last frame's, merged to at most 24, cleared and clipped to, and presents its own with `Present1`. Views whose subtree meets no area, or shows nowhere, are left out, in every frame.
 - A window with web views, a material or native components' windows, a change under a filter or a 3D transform, a new or resized swap chain, and the frame after a whole one draw everything. A paint the system asks for with nothing queued draws nothing: DWM keeps what was presented.
+- A `WM_SIZE` waits, as macOS's resize does ([frame clocks](#frame-clocks)), at most 16 ms for the commit at the new size, and applies and draws it before returning; an engine that missed the deadline is not waited for again until its commit lands. The swap chain is unscaled (`DXGI_SCALING_NONE`): a size shown before its frame shows the last one at its pixels against the top left and, past it, the opaque background of the topmost view filling the window, rather than stretched to the window.
 
 `TestPartialFramesDrawWhatAWholeOneDoes` checks the window's pixels after partial frames against a whole frame.
 

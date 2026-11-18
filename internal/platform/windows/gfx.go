@@ -17,6 +17,8 @@ import (
 	"errors"
 	"sync"
 	"unsafe"
+
+	"github.com/nsgo-dev/nsgo/internal/driver"
 )
 
 // gfx is the main thread's devices.
@@ -163,6 +165,9 @@ type swapChain struct {
 	composed      bool
 	// drawn is set once a frame was presented.
 	drawn bool
+	// edge is the background color last set, where a resize uncovers
+	// the window past the last frame.
+	edge driver.Color
 }
 
 // newSwapChain makes the window's swap chain of width by height pixels:
@@ -185,9 +190,13 @@ func newSwapChain(g *gfx, hwnd uintptr, width, height uint32, composed bool) (*s
 	defer factory.release()
 	width, height = max(width, 1), max(height, 1)
 	// Sequential: the back buffer keeps the frame of two presents ago,
-	// which a partial frame draws over (damage.go).
+	// which a partial frame draws over (damage.go). Unscaled: until a
+	// frame of the new size is presented, a resize shows the last one at
+	// its pixels against the top left and the background color past it,
+	// as other windows do, rather than stretched to the window.
 	desc := swapChainDesc1{width: width, height: height, format: dxgiFormatBGRA, sampleCount: 1,
-		bufferUsage: dxgiUsageTarget, bufferCount: 2, swapEffect: dxgiFlipSequential, alphaMode: dxgiAlphaIgnore}
+		bufferUsage: dxgiUsageTarget, bufferCount: 2, scaling: dxgiScalingNone, swapEffect: dxgiFlipSequential,
+		alphaMode: dxgiAlphaIgnore}
 	var swap *comObject
 	hr := factory.call(dxgiFactoryCreateSwapChainForHwnd, g.d3d.ptr(), hwnd, uintptr(unsafe.Pointer(&desc)), 0, 0,
 		uintptr(unsafe.Pointer(&swap)))
@@ -244,6 +253,19 @@ func (s *swapChain) resize(width, height uint32) error {
 	}
 	s.width, s.height = width, height
 	return nil
+}
+
+// setEdge sets the color a resize shows past the last frame to c, opaque,
+// unless it is already.
+func (s *swapChain) setEdge(c driver.Color) {
+	c |= 0xff
+	if s.composed || s.edge == c {
+		return
+	}
+	color := colorOf(c)
+	if !failed(s.swap.call(swapSetBackgroundColor, uintptr(unsafe.Pointer(&color)))) {
+		s.edge = c
+	}
 }
 
 // targetBitmap returns the back buffer as a bitmap the context draws into
