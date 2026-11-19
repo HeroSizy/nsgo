@@ -2,6 +2,7 @@
 
 ## [Unreleased]
 
+- Add `Scope.Store`, the graph's `core.Store`, which a host passes to another root's `RootOptions.Storage` so a plugin run on a root of its own keeps its `Storage` on the device with the app's (#837 by @houko).
 - Add `tsx.Limits.Memory`, off by default and `memory=` in `-limits`, which stops a sandboxed TSX bundle before `ArrayBuffer`, the typed arrays, `repeat`, `padStart`, `padEnd`, `Array.from`, `join`, `fill`, array copies, `apply`'s argument lists or `JSON.stringify` allocate past it, counting what they made until it is collected and reading the sizes they allocate by once, so that a getter or a proxy cannot change them, so one oversized allocation of theirs no longer ends the app; copies, concatenations, spreads and `replace` are not counted, so it does not hold a bundle written to exhaust memory (#760 by @houko).
 - Add `ui.Select.OptionsFunc`, options that follow signals and update the open list in place, keeping the field's value and focus (#848 by @houko).
 - Deliver `nsgotest.App.PickImages` answers to the app under `nsgo test -target` macos, windows and linux, in place of the system's picker, as headless tests already do (#866 by @houko).
