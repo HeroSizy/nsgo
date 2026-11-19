@@ -1974,12 +1974,35 @@ func (t *Tree) bindInputTheme(cx *Scope, n *node) {
 	})
 }
 
+// inputSourced is v's OnFocus and OnBlur, selecting its InputSource as the
+// field takes the focus and restoring it as the field loses it.
+func (t *Tree) inputSourced(v Input) (focus, blur func()) {
+	focus, blur = v.OnFocus, v.OnBlur
+	if v.InputSource == "" {
+		return focus, blur
+	}
+	return func() {
+			t.selectInputSource(v.InputSource)
+			if v.OnFocus != nil {
+				v.OnFocus()
+			}
+		}, func() {
+			if !v.KeepInputSource {
+				t.selectInputSource("")
+			}
+			if v.OnBlur != nil {
+				v.OnBlur()
+			}
+		}
+}
+
 func (t *Tree) mountInput(cx *Scope, parent *node, v Input) {
 	n := t.newNode(driver.KindInput, parent, cx)
 	t.setLabels(n, nil, v.LabelledBy)
 	t.setClasses(n, v.Class)
 	t.bindStyle(cx, n, v.Style, v.StyleFunc)
-	n.h = handlers{change: v.OnChange, submit: v.OnSubmit, focus: v.OnFocus, blur: v.OnBlur, layout: v.OnLayout}
+	n.h = handlers{change: v.OnChange, submit: v.OnSubmit, layout: v.OnLayout}
+	n.h.focus, n.h.blur = t.inputSourced(v)
 	n.props = driver.ViewProps{Role: cmpOr(v.Role, RoleTextField), Label: v.Label, Description: v.AccessibilityDescription, TestID: v.TestID}
 	t.bindBool(cx, n, v.Invalid, &n.props.Invalid)
 	n.h.action = v.OnAccessibilityAction

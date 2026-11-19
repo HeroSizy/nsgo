@@ -507,6 +507,27 @@ func TestCommandInputSource(t *testing.T) {
 	}
 }
 
+// A palette kept mounted selects its input source each time its field
+// takes the focus, and restores it each time the field loses it.
+func TestKeptCommandSelectsItsInputSourceEachFocus(t *testing.T) {
+	app := nsgotest.Start(t, func(cx *core.Scope) core.Node {
+		return core.View{Children: []core.Node{
+			base.Command{SearchLabel: "Search", TestID: "palette", InputSource: "abc", Items: func() []base.CommandItem { return nil }},
+			core.Input{TestID: "other"},
+		}}
+	})
+	for range 2 {
+		app.Focus("id:palette")
+		if app.InputSource != "abc" {
+			t.Fatalf("focused, selected %q", app.InputSource)
+		}
+		app.Focus("id:other")
+		if app.InputSource != "" {
+			t.Fatalf("blurred, left %q", app.InputSource)
+		}
+	}
+}
+
 // The keyboard moving the focus onto a view shows its tooltip at once,
 // until the focus leaves or Escape is pressed; a press that focuses it
 // leaves it to the pointer.

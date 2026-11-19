@@ -110,11 +110,9 @@ type Command struct {
 	// say: they go and nothing can be chosen, and RenderError draws it.
 	Error       func() string
 	RenderError func(message string) core.Node
-	// InputSource is the input source to select once the search field
-	// has the keyboard, as core.Scope.SelectInputSource names it
-	// ("com.apple.keylayout.ABC" for Latin commands on macOS), restored as the command goes unless
-	// the user chose another meanwhile or KeepInputSource. A source that
-	// is not enabled changes nothing.
+	// InputSource and KeepInputSource are the search field's, as
+	// core.Input's: "com.apple.keylayout.ABC" selects Latin commands on
+	// macOS each time the field takes the focus.
 	InputSource     string
 	KeepInputSource bool
 	// NoSeparator leaves the separators between sections out.
@@ -576,20 +574,6 @@ func (c Command) Render(cx *core.Scope) core.Node {
 		// An input method keeps its keys while it composes.
 		return fieldFocused.Get() && !composing.Get()
 	}
-	if c.InputSource != "" && !c.NoSearch {
-		selected := false
-		cx.Effect(func() {
-			if !selected && fieldFocused.Get() && !composing.Get() {
-				selected = true
-				cx.SelectInputSource(c.InputSource)
-			}
-		})
-		cx.Cleanup(func() {
-			if selected && !c.KeepInputSource {
-				cx.RestoreInputSource()
-			}
-		})
-	}
 	edited := func(text string) {
 		if c.Query == nil || c.Query() == nil {
 			own.Set(text)
@@ -663,6 +647,7 @@ func (c Command) Render(cx *core.Scope) core.Node {
 		bar = append(bar, drawnField(c.SearchField, core.Input{Ref: field, Value: query, Placeholder: c.Placeholder, AutoFocus: c.AutoFocus, Label: label,
 			// A touch keyboard's return key chooses and keeps the field.
 			SubmitBehavior: core.SubmitBehaviorSubmit, Class: c.SearchClass, Style: c.SearchStyle,
+			InputSource: c.InputSource, KeepInputSource: c.KeepInputSource,
 			OnFocus: func() { fieldFocused.Set(true) }, OnBlur: func() { fieldFocused.Set(false) },
 			OnCompositionChange: func(e core.Composition) { composing.Set(e.Composing) },
 			OnChange:            edited, OnSubmit: func(string) { p.accept() }}))

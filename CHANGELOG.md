@@ -2,6 +2,7 @@
 
 ## [Unreleased]
 
+- Add `core.Input.InputSource` and `KeepInputSource`, which select a keyboard input source, such as `com.apple.keylayout.ABC` for English, while a text field has the focus, and select `base.Command`'s each time its field takes the focus, so a palette kept mounted can be opened again.
 - Document what linking `tsx` costs in binary size, about 20 MB on the desktops, and why: its reflective method lookups and goja's turn off the linker's dead method elimination (#839 by @houko).
 - Add `Scope.Store`, the graph's `core.Store`, which a host passes to another root's `RootOptions.Storage` so a plugin run on a root of its own keeps its `Storage` on the device with the app's (#837 by @houko).
 - Add `tsx.Limits.Memory`, off by default and `memory=` in `-limits`, which stops a sandboxed TSX bundle before `ArrayBuffer`, the typed arrays, `repeat`, `padStart`, `padEnd`, `Array.from`, `join`, `fill`, array copies, `apply`'s argument lists or `JSON.stringify` allocate past it, counting what they made until it is collected and reading the sizes they allocate by once, so that a getter or a proxy cannot change them, so one oversized allocation of theirs no longer ends the app; copies, concatenations, spreads and `replace` are not counted, so it does not hold a bundle written to exhaust memory (#760 by @houko).

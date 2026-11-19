@@ -38,6 +38,12 @@ ui.Input{Masked: true, Value: password.Get, OnChange: password.Set,
 
 `KeyboardType` picks a software keyboard (`KeyboardEmail`, `KeyboardNumber`, `KeyboardURL` and the rest), `ReturnKeyType` labels its return key, and `SubmitBehavior` says whether Return submits or breaks a multiline line. `AutoCapitalize`, `NoAutoCorrect` and `AutoComplete` tune the system's help.
 
+`InputSource` selects a keyboard input source while the field has the focus and restores the user's as it loses it, unless `KeepInputSource`: `"com.apple.keylayout.ABC"` keeps a field for codes or commands in English on macOS. The ID is the platform's, a keyboard layout ID such as `"00000409"` on Windows and a Fcitx 5 or IBus input method on Linux; a source that is not enabled, phones and the web change nothing.
+
+```go
+ui.Input{Placeholder: "Bundle ID", InputSource: "com.apple.keylayout.ABC"}
+```
+
 `Style` merges over the field's look, and `StyleFunc` over that: what they set, such as the height, the padding, the font or a color, replaces `ui`'s, and the rest stays. The rim darkens under the pointer and takes the accent while focused as long as neither sets `BorderColor` or `Hover`.
 
 ```go

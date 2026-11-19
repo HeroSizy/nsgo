@@ -352,8 +352,8 @@ func (t *Tree) setInput(n *node, v Input) {
 	}
 	n.base = base
 	t.setClasses(n, v.Class)
-	n.h = handlers{change: v.OnChange, submit: v.OnSubmit, focus: v.OnFocus, blur: v.OnBlur, layout: v.OnLayout,
-		action: v.OnAccessibilityAction}
+	n.h = handlers{change: v.OnChange, submit: v.OnSubmit, layout: v.OnLayout, action: v.OnAccessibilityAction}
+	n.h.focus, n.h.blur = t.inputSourced(v)
 	n.props = driver.ViewProps{Role: cmpOr(v.Role, RoleTextField), Label: v.Label, Description: v.AccessibilityDescription,
 		TestID: v.TestID, Invalid: read(v.Invalid)}
 	t.bindAccessibility(nil, n, a11y{actions: v.AccessibilityActions})

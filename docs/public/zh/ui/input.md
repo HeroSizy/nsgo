@@ -38,6 +38,12 @@ ui.Input{Masked: true, Value: password.Get, OnChange: password.Set,
 
 `KeyboardType` 选择软件键盘（`KeyboardEmail`、`KeyboardNumber`、`KeyboardURL` 等），`ReturnKeyType` 设置回车键的标签，`SubmitBehavior` 决定回车是提交还是换行。`AutoCapitalize`、`NoAutoCorrect` 和 `AutoComplete` 调整系统的辅助行为。
 
+`InputSource` 在字段获得焦点时切换到指定的键盘输入源，失去焦点时还原用户原来的输入源，除非设置了 `KeepInputSource`：在 macOS 上用 `"com.apple.keylayout.ABC"` 让输入代码或命令的字段只打英文。ID 由平台决定，Windows 上是键盘布局 ID（如 `"00000409"`），Linux 上是 Fcitx 5 或 IBus 的输入法；未启用的输入源、手机和 Web 上不做任何改变。
+
+```go
+ui.Input{Placeholder: "Bundle ID", InputSource: "com.apple.keylayout.ABC"}
+```
+
 `Style` 合并在输入框的外观之上，`StyleFunc` 再合并在它之上：它们设置的高度、内边距、字体或颜色等取代 `ui` 的，其余保持不变。只要两者都不设置 `BorderColor` 或 `Hover`，边框在指针下仍会加深，获得焦点时仍显示强调色。
 
 ```go

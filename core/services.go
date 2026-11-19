@@ -179,22 +179,25 @@ func (cx *Scope) Announce(text string) {
 	}
 }
 
-// SelectInputSource is the core's part of base.Command's InputSource: it
-// selects the enabled keyboard input source of id, remembering the one it
-// replaces. An id is the platform's: a Text Input Sources ID on macOS
+// SelectInputSource selects the enabled keyboard input source of id, as
+// Input's InputSource does, remembering the one it replaces. An id is the platform's: a Text Input Sources ID on macOS
 // ("com.apple.keylayout.ABC"), a keyboard layout ID on Windows
 // ("00000409"), and a Fcitx 5 input method ("keyboard-us") or an IBus
 // engine ("xkb:us::eng") on Linux. Phones and the web ignore it.
 func (cx *Scope) SelectInputSource(id string) {
 	if t := cx.tree(); t != nil {
-		t.commands = append(t.commands, driver.MountItem{Kind: driver.ItemInputSource, Value: id})
-		t.changed = true
+		t.selectInputSource(id)
 	}
 }
 
-// RestoreInputSource is the core's part of base.Command's InputSource: it
-// goes back to the source SelectInputSource replaced, unless the user chose
-// another since.
+// selectInputSource is SelectInputSource's on t.
+func (t *Tree) selectInputSource(id string) {
+	t.commands = append(t.commands, driver.MountItem{Kind: driver.ItemInputSource, Value: id})
+	t.changed = true
+}
+
+// RestoreInputSource goes back to the source SelectInputSource replaced,
+// unless the user chose another since.
 func (cx *Scope) RestoreInputSource() { cx.SelectInputSource("") }
 
 // MaxURLLength is the longest URL OpenURL opens, in bytes: a mailto:

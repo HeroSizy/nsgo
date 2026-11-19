@@ -403,6 +403,13 @@ type Input struct {
 	NoAutoCorrect bool
 	// AutoComplete says what the field holds, for the system's autofill.
 	AutoComplete AutoComplete
+	// InputSource is the keyboard input source to select each time the
+	// field takes the focus, as Scope.SelectInputSource names it
+	// ("com.apple.keylayout.ABC" for Latin text on macOS), restored as it
+	// loses the focus unless the user chose another meanwhile or
+	// KeepInputSource. A source that is not enabled changes nothing.
+	InputSource     string
+	KeepInputSource bool
 	// IOS holds the props only iOS has.
 	IOS IOSInputProps
 	// HideCaret draws no caret.
