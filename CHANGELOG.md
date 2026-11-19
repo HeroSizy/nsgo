@@ -42,7 +42,7 @@
 - Let macOS editing role items with `OnSelect` follow the focused editor's enabled state (#724).
 - Stop canvases and shaders on Apple platforms and the web from drawing an earlier image for an image's inline `Data` once the earlier buffer was freed and its address reused, by keeping a cached image's bytes alive (#715, #737, #751).
 - Localize the separator between Android TalkBack's state parts with the app's language, including Chinese punctuation (#704).
-- Keep a toast's title, description, leading view and action current when showing a replacement with the same ID (#749).
+- Keep a toast's title, description, leading view and action current when showing a replacement with the same ID, and have the screen reader read the replacement (#749).
 
 ## [0.1.0] - 2026-11-16
 
