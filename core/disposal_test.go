@@ -1,7 +1,9 @@
 package core
 
 import (
+	goruntime "runtime"
 	"testing"
+	"weak"
 
 	"github.com/nsgo-dev/nsgo/internal/driver"
 )
@@ -50,4 +52,42 @@ func TestDisposingATreeReleasesItsPreparedTexts(t *testing.T) {
 			t.Errorf("prepared text %d released %d times, want once", i, p.releases)
 		}
 	}
+}
+
+// Overlays and the views holding them are freed once removed: their host lets go of them, so a tooltip or popover shown and hidden again and again does not keep each subtree it had.
+func TestRemovedOverlaysAreFreed(t *testing.T) {
+	var shown *Signal[bool]
+	h := newHost(t, Size{Width: 400, Height: 400}, func(cx *Scope) Node {
+		shown = NewSignal(cx, true)
+		return View{Children: []Node{
+			Show{When: shown.Get, Then: func(*Scope) Node {
+				return Group{
+					View{TestID: "overlaid", Children: []Node{
+						Overlay{TestID: "overlay", Children: []Node{Text{Content: "Over"}}},
+					}},
+					View{TestID: "tipped", Tooltip: Text{Content: "Tip"}},
+					Modal{TestID: "modal", Children: []Node{Text{Content: "Modal"}}},
+				}
+			}},
+		}}
+	})
+	h.commit()
+	var gone []weak.Pointer[node]
+	for _, id := range []string{"overlaid", "overlay", "tipped", "modal"} {
+		gone = append(gone, weak.Make(h.find(id)))
+	}
+	for _, on := range []bool{false, true, false} {
+		shown.Set(on)
+		h.commit()
+	}
+	goruntime.GC()
+	for i, p := range gone {
+		if p.Value() != nil {
+			t.Errorf("view %d stays in memory once removed", i)
+		}
+	}
+	if n := len(h.tree.view.hosted); n != 0 {
+		t.Errorf("the root view hosts %d views once they are removed", n)
+	}
+	goruntime.KeepAlive(h.tree)
 }

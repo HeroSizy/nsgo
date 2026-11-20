@@ -1073,6 +1073,10 @@ func (t *Tree) discard(n *node) {
 	}
 	if n.hoist != nil {
 		h := n.hoist.host
+		// Its host lets go of it, else the root view keeps the whole subtree. A new slice, as a loop over the host's may be what removes it.
+		if i := slices.Index(h.hosted, n); i >= 0 {
+			h.hosted = slices.Concat(h.hosted[:i:i], h.hosted[i+1:])
+		}
 		t.reorder(h)
 		t.markLayout(h)
 	}
