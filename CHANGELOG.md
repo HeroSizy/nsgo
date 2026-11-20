@@ -2,6 +2,7 @@
 
 ## [Unreleased]
 
+- Add the `macos_universal` build target, which joins the arm64 and x64 apps, libraries and widgets into one direct-channel disk image and Sparkle feed (#265 by @houko).
 - Add `TabStyle` and `IndicatorStyle` to `ui.Tabs` to restyle its tabs, the selected tab and the indicator (#958 by @houko).
 - Reload a TSX `<WebView>` in place with the new script when `injectedJavaScriptBeforeContentLoaded` changes, as `core.WebView.InjectedJavaScriptBeforeContentFunc` does, rather than replacing the web view (#895 by @houko).
 - Keep partial borders above Apple backdrop, material and glass layers while leaving app children above the border (#935 by @houko).
