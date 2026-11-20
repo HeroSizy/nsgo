@@ -312,10 +312,10 @@ func (s *surface) close() {
 		s.audio.Close()
 		s.audio = nil
 	}
+	// Its views let go of what they hold, shaders' layers and threads among it; their native views stay where they are and go with the surface's.
 	for _, v := range s.views {
-		if v != nil && v.component != nil {
-			v.component.Close()
-			v.component = nil
+		if v != nil {
+			s.delete(v, true)
 		}
 	}
 	// Its native objects go with it, and their addresses come back.

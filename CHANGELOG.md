@@ -23,6 +23,8 @@
 - Fail the `tsx.Plugin` calls still waiting on a promise when `Plugin.Close` closes the plugin, after its cleanups run (#893 by @houko).
 - Keep the borders of `ui/chat`'s glass composer, `GlassPanel` and popovers on watchOS, which draws no Liquid Glass rim (#896 by @houko).
 - Close the windows a Linux app opened, and release their input editors' display-wide styles, when the app's own window stops (#901 by @houko).
+- Free removed overlays, tooltips, modals and fixed views with their subtrees, which their host kept for the app's lifetime.
+- Release a closed window's views on macOS and Windows, and an embedded iOS view's, with their shaders' layers, textures and render threads and the Windows window's swap chain.
 - Apply `Overflow: Hidden` on HarmonyOS, clipping a view's children to its bounds and rounded corners (#808 by @houko).
 - Add `Leading` and `Trailing` to `ui.Dialog` to put actions at the ends of its title row, with the title centered between them (#957 by @houko).
 - Show the text a HarmonyOS target test types in the native text field, so its screenshots show what the app received (#910 by @houko).

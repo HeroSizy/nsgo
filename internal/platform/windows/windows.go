@@ -2637,6 +2637,19 @@ func wndProc(hwnd uintptr, message uint32, wParam, lParam uintptr) uintptr {
 			w.engine.Close()
 		}
 		w.stopPerf()
+		// Its views let go of what they draw with, shaders' textures among it, and the window of its swap chain.
+		for _, v := range w.views {
+			if v != nil {
+				w.destroy(v)
+			}
+		}
+		if w.composition != nil {
+			w.composition.release()
+		}
+		if w.swap != nil {
+			w.swap.release()
+			w.swap = nil
+		}
 		delete(windows, hwnd)
 		w.hwnd = 0
 		w.updateAppSurface()
