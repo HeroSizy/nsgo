@@ -9,6 +9,7 @@
 - Add `Scope.ScanCode`, which shows the camera full screen and answers with the first QR code or barcode it reads, on iOS devices through AVFoundation, with `Env.CanScanCode` and `nsgotest.App.ScanCode` answering it headless and on every target (#429 by @houko).
 - Pin `Environment.Camera` under `nsgo test -target` and deliver `App.TakePhoto` answers through the target test host instead of opening a system camera (#897, #948 by @houko).
 - Add Android's Material 3 `SystemSwitch` implementation for `ui.SwitchSystem`, with native checked, disabled and accessibility behavior (#937 by @houko).
+- Ignore an inherited AppImage environment when registering Linux launch-at-login entries, unless the running executable is inside that image (#946 by @houko).
 - Give macOS's default menu bar AppKit's app menu, with About, Hide, Hide Others and Show All, and Check for Updates… in apps that update themselves, and a Window menu listing the windows, where it held only Quit and Edit; it takes no ⌘H, ⌥⌘H or ⌘M from the app's own key bindings (#947 by @houko).
 - Let `ui.TabShell.BarHidden` hide a system or drawn tab bar while a detail page shows and restore the section's bottom safe area (#932 by @houko).
 - Add `Position` and `PagePosition` to `core.PanEvent` on every pan phase across native, web, mini program and headless targets (#706 by @houko).
