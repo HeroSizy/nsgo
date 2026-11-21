@@ -40,7 +40,8 @@ const (
 // header: the sidebar's toggle stays after the window controls, the
 // app's SidebarActions end the sidebar's header, and its Header and
 // Actions are the content's. Hiding the sidebar slides the content over
-// it, the sidebar keeping its width; its edge is a handle the user drags
+// it, the sidebar keeping its width, and the content's header with it
+// until it meets the toggle, where it stays; its edge is a handle the user drags
 // to resize it and double-clicks to restore DefaultWidth. SidebarFooter
 // is a bar at the sidebar's bottom, with no line above it.
 //
@@ -139,20 +140,22 @@ func (s SidebarShell) Render(cx *core.Scope) core.Node {
 		}
 	}
 
-	shown := slideShown(cx, open)
 	inset := s.Variant == SidebarShellInset
+	// reveal is how much of the sidebar shows, from 0 to 1, moved a
+	// display frame at a time with the content's title and, in the inset
+	// variant, the margin and the window controls.
+	shown, reveal := slideFrames(cx, open)
 	// margin is the inset variant's around the sidebar and the content,
-	// which slides as the sidebar does; shift follows it a frame at a time
-	// for the window controls and the toggle, which the slide leaves.
+	// by which the window controls and the toggle move too.
 	margin := func() core.Points {
-		if inset && open() {
-			return shellInset
+		if inset {
+			return shellInset * reveal()
 		}
 		return 0
 	}
-	shift := core.NewSignal(cx, core.Untracked(cx, margin))
+	controls := func() core.Points { return controlsEnd(cx) }
 	if inset {
-		insetControls(cx, margin, shift)
+		controls = insetControls(cx, margin, func() bool { r := reveal(); return r == 0 || r == 1 })
 	}
 
 	// The toggle follows the window controls, which keep a margin of
@@ -160,16 +163,16 @@ func (s SidebarShell) Render(cx *core.Scope) core.Node {
 	// of it.
 	toggleStart := func() core.Points {
 		if desktop.TitleBar(cx).Left > 0 {
-			return controlsEnd(cx)
+			return controls()
 		}
-		return controlsEnd(cx) + 12 + shift.Get()
+		return controls() + 12 + margin()
 	}
 	const toggleSize, toggleIcon = 32, 16.25
-	reserve := func() core.Points { return controlsEnd(cx) }
+	reserve := controls
 	var toggle core.Node
 	if s.OnOpenChange != nil {
 		toggle = core.View{StyleFunc: func() core.Style {
-			return core.Style{Position: core.Absolute, Top: core.Pt(core.Insets(cx).Top + shift.Get()), Left: core.Pt(toggleStart()),
+			return core.Style{Position: core.Absolute, Top: core.Pt(core.Insets(cx).Top + margin()), Left: core.Pt(toggleStart()),
 				Height: core.Pt(ShellHeaderHeight(cx)), Direction: core.Row, AlignItems: core.AlignCenter, ZIndex: 2}
 		}, Children: []core.Node{IconButton{Icon: lucide.PanelLeft, Label: s.ToggleLabel, Size: toggleSize, IconSize: toggleIcon,
 			OnPress: func() { s.OnOpenChange(!open()) }}}}
@@ -187,11 +190,7 @@ func (s SidebarShell) Render(cx *core.Scope) core.Node {
 	}
 	// The slot narrows over the sidebar, which keeps its width.
 	slot := core.View{TestID: "sidebar-slot", StyleFunc: func() core.Style {
-		var w core.Points
-		if open() {
-			w = width()
-		}
-		return core.Style{Width: core.Pt(w), FlexShrink: 0, Overflow: core.Hidden}
+		return core.Style{Width: core.Pt(width() * reveal()), FlexShrink: 0, Overflow: core.Hidden}
 	}, Children: []core.Node{core.View{TestID: "sidebar-panel", Disabled: closed, Children: sidebar, StyleFunc: func() core.Style {
 		st := core.Style{Width: core.Pt(width()), Height: core.Pct(100), MinHeight: core.Pt(0)}
 		if !shown.Get() {
@@ -212,10 +211,9 @@ func (s SidebarShell) Render(cx *core.Scope) core.Node {
 	}
 	var content core.Node = core.View{TestID: "content", Style: FillRest.Merge(core.Style{Overflow: core.Hidden}), StyleFunc: Filled(colors.Background), Children: []core.Node{
 		shellHeader(cx, "content-header", func() core.Points {
-			if open() {
-				return 0
-			}
-			return reserve()
+			// The title slides with the content until it meets the toggle,
+			// where it stays.
+			return max(reserve()-(2*margin()+width()*reveal()), 0)
 		}, true, headerFill, append(append(head, s.Actions...), s.rightToggle()...)),
 		// The content keeps clear of the right inset unless the right panel is open there, and of the left while the sidebar is closed.
 		clearOfSides(FillRest, func() core.EnvEdges {
@@ -260,12 +258,8 @@ func (s SidebarShell) Render(cx *core.Scope) core.Node {
 		if s.Fixed {
 			st.PointerEvents = core.PointerEventsNone
 		}
-		if open() {
-			// The band centers in the gap before the inset card.
-			st.Left = core.Pt(margin() + width() + margin()/2 - 2)
-		} else {
-			st.Left = core.Pt(-2)
-		}
+		// The band centers in the gap before the inset card.
+		st.Left = core.Pt(margin() + width()*reveal() + margin()/2 - 2)
 		if !shown.Get() {
 			st.Visibility = core.VisibilityHidden
 		}
@@ -363,46 +357,88 @@ func slideShown(cx *core.Scope, open func() bool) *core.Signal[bool] {
 	return shown
 }
 
-// insetControls moves shift to margin a frame at a time as the sidebar
-// slides, and the window controls with it: margin changes in the pass
-// that animates the layout, which the controls are no part of.
-func insetControls(cx *core.Scope, margin func() core.Points, shift *core.Signal[core.Points]) {
+// slideFrames is slideShown for a slide the shell moves itself a display
+// frame at a time: whether the sidebar is seen, and how much of it shows.
+func slideFrames(cx *core.Scope, open func() bool) (*core.Signal[bool], func() core.Points) {
 	env := cx.Env()
-	const frames = 13 // sidebarSlide at 60 frames a second
-	var stop func() bool
+	was := core.Untracked(cx, open)
+	shown := core.NewSignal(cx, was)
+	var at core.Points
+	if was {
+		at = 1
+	}
+	reveal := core.NewSignal(cx, at)
+	var stop func()
 	cx.Effect(func() {
-		to := margin()
+		o := open()
+		if o == was {
+			return
+		}
+		was = o
 		cx.Untrack(func() {
 			if stop != nil {
 				stop()
 				stop = nil
 			}
-			from := shift.Get()
-			if from == to || env.ReduceMotion() {
-				shift.Set(to)
+			var to core.Points
+			if o {
+				to = 1
+				shown.Set(true)
+			}
+			from := reveal.Get()
+			if env.ReduceMotion() {
+				reveal.Set(to)
+				shown.Set(o)
 				return
 			}
-			var step func(i int)
-			step = func(i int) {
-				t := float32(i) / frames
-				// Ease in and out, as the layout slides.
-				t = t * t * (3 - 2*t)
-				shift.Set(from + (to-from)*core.Points(t))
-				if i < frames {
-					stop = cx.AfterFunc(sidebarSlide/frames, func() { step(i + 1) })
+			stop = cx.Animate(sidebarSlide, core.EaseInOut, func(p float64) {
+				reveal.Set(from + (to-from)*core.Points(p))
+				if p == 1 && !o {
+					shown.Set(false)
 				}
-			}
-			step(1)
+			})
 		})
 	})
-	if !desktop.IsAvailable(cx) {
-		return
+	return shown, reveal.Get
+}
+
+// insetControls moves the window controls by margin, and returns where
+// they end. The title bar follows them a frame or more behind as they
+// move, those at the window's start by margin, so where they end without
+// it is taken only while resting says they rest.
+func insetControls(cx *core.Scope, margin func() core.Points, resting func() bool) func() core.Points {
+	type rest struct {
+		end   core.Points
+		moved bool
 	}
+	at := func() rest {
+		r := rest{end: controlsEnd(cx), moved: desktop.TitleBar(cx).Left > 0}
+		if r.moved {
+			r.end -= margin()
+		}
+		return r
+	}
+	settled := core.NewSignal(cx, core.Untracked(cx, at))
 	cx.Effect(func() {
-		d := shift.Get()
-		desktop.SetWindowControls(cx, desktop.WindowControls{Offset: core.Point{X: d, Y: d}})
+		if resting() {
+			r := at()
+			cx.Untrack(func() { settled.Set(r) })
+		}
 	})
-	cx.Cleanup(func() { desktop.SetWindowControls(cx, desktop.WindowControls{}) })
+	if desktop.IsAvailable(cx) {
+		cx.Effect(func() {
+			d := margin()
+			desktop.SetWindowControls(cx, desktop.WindowControls{Offset: core.Point{X: d, Y: d}})
+		})
+		cx.Cleanup(func() { desktop.SetWindowControls(cx, desktop.WindowControls{}) })
+	}
+	return func() core.Points {
+		r := settled.Get()
+		if r.moved {
+			return r.end + margin()
+		}
+		return r.end
+	}
 }
 
 // rightToggle is the toggle of the right panel, when it has one.

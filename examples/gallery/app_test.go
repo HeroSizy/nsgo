@@ -456,10 +456,12 @@ func TestSidebarTabsFit(t *testing.T) {
 func TestSidebarToggles(t *testing.T) {
 	app := startDesktop(t)
 	app.Press("role:button Toggle sidebar")
+	app.Advance(time.Second)
 	if w := app.Find("id:demo-Stocks").Parent.Frame.Size.Width; w < 1100 {
 		t.Fatalf("the pane is %v wide with the sidebar hidden", w)
 	}
 	app.ChooseMenu("View", "Show Sidebar")
+	app.Advance(time.Second)
 	if w := app.Find("id:demo-Stocks").Parent.Frame.Size.Width; w > 1200-sidebarWidth+1 {
 		t.Fatalf("the pane is %v wide with the sidebar shown", w)
 	}

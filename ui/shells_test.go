@@ -2,6 +2,7 @@ package ui
 
 import (
 	"fmt"
+	"math"
 	"testing"
 	"time"
 
@@ -109,6 +110,7 @@ func TestSidebarShell(t *testing.T) {
 	if open {
 		t.Fatal("the toggle left the sidebar open")
 	}
+	app.Advance(time.Second)
 	if got := within(app.Find("shell"), "sidebar-slot").Frame.Size.Width; got != 0 {
 		t.Fatalf("slot = %v, want closed", got)
 	}
@@ -121,11 +123,11 @@ func TestSidebarShell(t *testing.T) {
 	if want := core.Points(80 + 32 + 8); x(app, "shell", app.Find("title")) != want {
 		t.Fatalf("title at %v, want %v, after the toggle", x(app, "shell", app.Find("title")), want)
 	}
-	app.Advance(time.Second)
 	if app.Exists("sidebar-header") || app.Exists("role:adjustable Resize sidebar") {
 		t.Fatal("the hidden sidebar is still seen")
 	}
 	app.Press("role:button Toggle sidebar")
+	app.Advance(time.Second)
 	if !open || within(app.Find("shell"), "sidebar-slot").Frame.Size.Width != 250 {
 		t.Fatal("the sidebar came back without its width")
 	}
@@ -181,7 +183,7 @@ func TestSidebarShellSafeArea(t *testing.T) {
 			}
 			check("open", true)
 			app.Post(func() { setOpen(false) })
-			app.Settle()
+			app.Advance(time.Second)
 			check("closed", false)
 		})
 	}
@@ -268,18 +270,88 @@ func TestSidebarShellInset(t *testing.T) {
 	}
 
 	app.Press("role:button Toggle sidebar")
-	if got := x(app, "shell", app.Find("content")); got != 0 {
-		t.Fatalf("card at %v once hidden, want the window's edge", got)
+	app.Advance(sidebarSlide / 2)
+	if got := x(app, "shell", app.Find("content")); got <= 0 || got >= 250 {
+		t.Fatalf("card at %v halfway, want it on its way", got)
 	}
 	if got := offset(); got.X <= 0 || got.X >= 5 {
 		t.Fatalf("window controls jumped to %v, want them on their way", got)
 	}
 	app.Advance(time.Second)
+	if got := x(app, "shell", app.Find("content")); got != 0 {
+		t.Fatalf("card at %v once hidden, want the window's edge", got)
+	}
 	if got := offset(); got != (core.Point{}) {
 		t.Fatalf("window controls moved by %v once hidden, want none", got)
 	}
 	if card := app.Find("content"); card.Style.BorderColor != Alpha(p.Line, 0) || card.Style.Effects != nil && len(card.Style.Effects.Shadows) > 0 {
 		t.Fatalf("card edge = %x once hidden, want no edge or shadow", card.Style.BorderColor)
+	}
+}
+
+// TestSidebarShellTitleSlides slides the content's title with the
+// content, as the inset card's window controls and title bar follow it a
+// frame at a time, until it meets the toggle, where it stays, both ways:
+// the slide is laid out each frame, as the platform's layout animation
+// would cut short, the title jumping to its place.
+func TestSidebarShellTitleSlides(t *testing.T) {
+	for _, c := range []struct {
+		e core.Environment
+		v SidebarShellVariant
+	}{{windowEnv, SidebarShellPlain}, {desktopEnv, SidebarShellPlain}, {windowEnv, SidebarShellInset}, {desktopEnv, SidebarShellInset}} {
+		e := c.e
+		app, _ := shell(t, e, func(cx *core.Scope) core.Node {
+			o := core.NewSignal(cx, true)
+			return SidebarShell{TestID: "shell", Variant: c.v, ToggleLabel: "Toggle sidebar",
+				Open: o.Get, OnOpenChange: o.Set, Width: func() core.Points { return 240 },
+				Header:  []core.Node{core.Text{Content: "Inbox", TestID: "title"}},
+				Content: []core.Node{core.Text{Content: "Body"}}}
+		})
+		offset := func() core.Point {
+			for i := len(app.Window) - 1; i >= 0; i-- {
+				if app.Window[i].Action == core.WindowSetControls {
+					return app.Window[i].Controls.Offset
+				}
+			}
+			return core.Point{}
+		}
+		// follow reports the title bar where the controls are, as macOS does.
+		follow := func() {
+			if e.TitleBar.Left > 0 {
+				moved := e
+				moved.TitleBar.Left += offset().X
+				app.SetEnvironment(moved)
+			}
+		}
+		title := func() core.Points { return x(app, "shell", app.Find("title")) }
+		card := func() core.Points { return x(app, "shell", app.Find("content")) }
+		follow()
+		inCard := title() - card()
+		app.Press("role:button Toggle sidebar")
+		for range 20 {
+			follow()
+			app.Advance(sidebarSlide / 13)
+		}
+		follow()
+		stop := title()
+		if stop <= inCard {
+			t.Fatalf("variant %d, title bar %v: title at %v once hidden, want it clear of the toggle", c.v, e.TitleBar, stop)
+		}
+		for _, open := range []bool{true, false} {
+			app.Press("role:button Toggle sidebar")
+			for i := range 20 {
+				follow()
+				// The toggle stopping it moves with the controls.
+				want := max(card()+inCard, stop+offset().X)
+				if got := title(); math.Abs(float64(got-want)) > 0.5 {
+					t.Fatalf("variant %d, title bar %v, opening %v, frame %d: title at %v, want %v", c.v, e.TitleBar, open, i, got, want)
+				}
+				app.Advance(sidebarSlide / 13)
+			}
+		}
+		if got := title(); got != stop {
+			t.Fatalf("variant %d, title bar %v: title at %v once hidden again, want %v", c.v, e.TitleBar, got, stop)
+		}
 	}
 }
 
