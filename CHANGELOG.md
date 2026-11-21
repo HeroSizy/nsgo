@@ -2,6 +2,7 @@
 
 ## [Unreleased]
 
+- Add `ui/editor`, `base/editor`'s code editor in ui's colors and code type, following the theme, with the app's styles merged over it part by part.
 - Draw `ui.Button`'s primary, secondary and ghost variants without a rim, and fill the secondary one with the text's color at a low opacity instead of an opaque gray.
 - Cut `ui.BadgeVariant` to neutral, accent, success, warn and danger: `BadgeUp` becomes `BadgeSuccess`, and `BadgeInfo`, `BadgeDown` and `BadgeOutline`, which repeated other looks, are gone, with `"info"`, `"up"`, `"down"` and `"outline"` in TSX.
 - Let `richeditor.View.NodeViews` draw inline leaves in the text, where a press selects the node and an edit can replace it whole (#1172 by @shuuul).

@@ -1,6 +1,6 @@
 # Editor and DiffView
 
-`base/editor` is NSH's `Editor` (`nsh/docs/dev/editor.md`) and `base/diff` its `DiffView` (`nsh/docs/dev/diff.md`). Read this before changing either, or the highlighting they share in `base/internal/syntax`. Each is a package of its own because its highlighting links chroma's lexers, and so is `ui/diff`, the DiffView in `ui`'s colors, which apps show rather than `base/diff`'s bare one.
+`base/editor` is NSH's `Editor` (`nsh/docs/dev/editor.md`) and `base/diff` its `DiffView` (`nsh/docs/dev/diff.md`). Read this before changing either, or the highlighting they share in `base/internal/syntax`. Each is a package of its own because its highlighting links chroma's lexers, and so are `ui/editor` and `ui/diff`, the Editor and DiffView in `ui`'s colors, which apps show rather than base's bare ones.
 
 ## Editor
 
