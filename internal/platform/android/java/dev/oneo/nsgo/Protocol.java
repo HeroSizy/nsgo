@@ -29,7 +29,7 @@ final class Protocol {
     static Message readMessage(DataInputStream in) throws IOException {
         int kind = in.read();
         if (kind == -1) return null;
-        if (kind < BATCH || kind > PIXEL_FRAME) throw invalidMessage("unexpected message kind " + kind);
+        if (kind < BATCH || kind > AUDIO_FILE) throw invalidMessage("unexpected message kind " + kind);
         int length;
         try {
             length = in.readInt();
@@ -82,6 +82,8 @@ final class Protocol {
     static final int SCAN = 21;
     /** A bitmap of the next batch: item index, key, width, height and premultiplied RGBA bytes. */
     static final int PIXEL_FRAME = 22;
+    /** A staged audio file, or a failure: surface, object, path, error code and message. */
+    static final int AUDIO_FILE = 23;
 
     // Java to Go.
     static final int START = 1;
@@ -117,6 +119,8 @@ final class Protocol {
     static final int CANVAS_REQUEST = 22;
     /** What the code scanner reports: the surface, the request's count and a SCAN_FRAME with the frame's width, height and luminance, a SCAN_CLOSED, or a SCAN_FAILED with why (scan.go). */
     static final int SCAN_REPORT = 23;
+    /** A sound or player report (Audio.java, audio.go). */
+    static final int AUDIO_REPORT = 24;
 
     /** Writes a message's part after its head. */
     interface Body {
@@ -254,6 +258,7 @@ final class Protocol {
     static final int ITEM_BIOMETRIC_AUTHENTICATE = 87;
     static final int ITEM_OPEN_SURFACE = 68;
     static final int ITEM_OVERLAY_PERMISSION = 89;
+    static final int ITEM_AUDIO = 96;
     static final int ITEM_SPEAK = 102;
     static final int ITEM_SENSOR = 103;
     static final int ITEM_ORIENTATION = 111;

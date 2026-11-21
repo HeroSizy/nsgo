@@ -87,6 +87,8 @@ const (
 	msgScan = 21
 	// msgPixelFrame carries a bitmap for an item of the next batch on its surface.
 	msgPixelFrame = 22
+	// msgAudioFile supplies a file staged for a sound or player (audio.go).
+	msgAudioFile = 23
 
 	// Java to Go.
 	msgStart       = 1 // the view's size and the folds measured at it (readSize), as msgResize
@@ -122,6 +124,8 @@ const (
 	msgCanvasRequest = 22
 	// msgScanReport is what the code scanner reports: a frame of the camera, its close or its failure (scan.go).
 	msgScanReport = 23
+	// msgAudioReport is a sound or player's status (audio.go).
+	msgAudioReport = 24
 )
 
 // The parts of an image view's request msgImage carries.
@@ -156,6 +160,7 @@ type surface struct {
 	ratio atomic.Uint32 // the pixel ratio's float32 bits, for rasterizing SVG
 
 	canvasRequests canvasRequests // mounts and cache misses, on separate goroutines
+	audioFiles     audioFiles     // the byte sources staged for the runtime
 
 	// On the engine goroutine.
 	// main is the activity's view, the first surface; requests is the last image request number, across surfaces.
@@ -257,6 +262,7 @@ func (s *surface) serve(app engine.App, opts Options, test *testOpen) {
 				s.engine.Close()
 			}
 			s.canvasRequests.close()
+			s.audioFiles.close()
 			s.closeNatives()
 			return
 		}
@@ -441,6 +447,8 @@ func (s *surface) serve(app engine.App, opts Options, test *testOpen) {
 			s.webCookiesSet(&r)
 		case msgScanReport:
 			s.scanReport(&r)
+		case msgAudioReport:
+			s.audioReport(&r)
 		case msgDNS:
 			servers := make([]string, r.u32())
 			for i := range servers {
@@ -924,6 +932,7 @@ func (s *surface) mount(v *treeView, b *driver.MountBatch) {
 		batch = &driver.MountBatch{Root: b.Root, Items: pending}
 		first, requests, natives, frames, canvases = false, nil, nil, nil, nil
 	}
+	s.stageAudio(v.id, b)
 	for _, l := range loads {
 		go s.load(l)
 	}
@@ -1389,6 +1398,8 @@ func encode(w *writer, b *driver.MountBatch, first bool, requests []uint32, nati
 			w.str(r.Voice)
 			w.float(r.Rate)
 			w.float(r.Pitch)
+		case driver.ItemAudio:
+			writeAudio(w, it.Count, it.Audio)
 		case driver.ItemBiometricAvailability:
 			w.u32(it.Count)
 		case driver.ItemBiometricAuthenticate:
