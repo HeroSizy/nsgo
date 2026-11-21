@@ -29,6 +29,7 @@
 - Freeze shared typed-array and `DataView` intrinsics in hardened TSX realms (#1091 by @houko).
 - Customize `ui.FormSection` cards and `ui.FormRow` leading content, icon tiles and typography (#1074 by @houko).
 - Keep an iOS app's engine, state and screens when UIKit disconnects its scene and connects a new one while the process lives, showing the running app in the new window rather than starting a second engine over it (#1030 by @houko).
+- Apply the iPad software keyboard inset only to the scene where the user is typing (#1160 by @houko).
 - Let a `core.Shader`'s `Images` take an `ImageSource` with `Pixels`, copied once per `Version` and written into a texture each backend keeps, with no upload while the version stays, so a shader can filter a frame the app writes (#1052 by @houko).
 - Report every finger of a Windows or Linux touchscreen to `View.OnTouch` and the touch responder with an ID from 1 that stays while it is down, on X11 and Wayland too, as on iOS, Android and the web; the mouse stays finger 0, and a touch no longer also reports it (#1056 by @houko).
 - Add `WebView.UserAgentSuffix`, and `userAgentSuffix` in TSX, to append to the platform's own user agent or to `UserAgent` on macOS, iOS, Android, Windows and Linux (#114 by @houko).
