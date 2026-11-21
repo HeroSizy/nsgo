@@ -39,6 +39,7 @@ NSGo is a cross-platform native UI engine with a Go backend, ported from the des
 - Everything that scrolls follows touchpads and touchscreens smoothly and glides on with inertia when let go, on every target and the web included: scroll through `Scroll`, `List` or the platform's own scrolling, never by stepping offsets from pointer or wheel events. Past an edge, follow the platform: a rubber band on macOS and iOS, its stretch on Android, a stop for touchpads on Windows and Linux, and whatever the browser does on the web.
 - In the gallery, a playground centers its forms, and a form with no width of its own fills a centered column; what lists its results downward, such as a command palette, starts at the top and fills the stage (`Start`). A number's knob is a value left of a 180-point slider.
 - In the gallery, a `base` component keeps its simplest form, in the text's color and grays.
+- In the gallery, a knob for a prop the `base` form has goes in `BaseKnobs`, shown above the divider and driving both forms; `Knobs`, below it, holds only what `ui` adds.
 - A complex component takes a directory of its own, whose package may hold many files (`base/dock`, `ui/chat`), and drops the component's name from its API (`dock.Area`). Packages under `base` share code through `base/internal`.
 
 ## Working with the user
