@@ -44,6 +44,14 @@ ui.Slider{Value: position.Get, OnChange: position.Set, MaxFunc: duration.Get, La
 
 在 TSX 中，`min={minimum()}`、`max={duration()}` 和 `step={step()}` 就地跟随它们的信号；`max={0}` 会让范围收拢，和 `MaxFunc` 返回 0 一样。
 
+## 方向
+
+`Axis: base.Vertical` 让滑块竖起来，最小值在底部；用 `Style` 给它一个高度。`Inverted` 把最小值放到另一端：垂直滑块的顶部，水平滑块的末端。沿轨道的方向键跟着方向走。`ui.Progress` 也接受同样的 `Axis` 和 `Inverted`。
+
+```go
+ui.Slider{Value: level.Get, OnChange: level.Set, Axis: base.Vertical, Label: "音量", Style: core.Style{Height: core.Pt(160)}}
+```
+
 ## 行为
 
 拖动跟随指针，并在移动时报告 `OnChange`。方向键按一步移动获得焦点的旋钮，Home 和 End 到两端，Page Up 和 Page Down 移动更远。`Step` 大于 0 时，`ui.Slider` 在轨道下标记最多 60 个刻度。

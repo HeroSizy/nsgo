@@ -4,6 +4,7 @@ import (
 	"math"
 	"testing"
 
+	"github.com/nsgo-dev/nsgo/base"
 	"github.com/nsgo-dev/nsgo/core"
 )
 
@@ -194,4 +195,44 @@ func TestSliderRangeDragHoldsAccessibleValues(t *testing.T) {
 			t.Fatalf("release did not report the drag's value: low %+v, high %+v, value %v", lo, hi, high.Get())
 		}
 	})
+}
+
+// TestSliderDirections puts min where Axis and Inverted say: a press and
+// the arrow keys along the track follow it.
+func TestSliderDirections(t *testing.T) {
+	cases := []struct {
+		name     string
+		axis     base.Axis
+		inverted bool
+		press    core.Point
+		key      string
+	}{
+		{"bottom up", base.Vertical, false, core.Point{X: 10, Y: 60}, "up"},
+		{"top down", base.Vertical, true, core.Point{X: 10, Y: 160}, "down"},
+		{"end to start", base.Horizontal, true, core.Point{X: 60, Y: 10}, "left"},
+	}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			var value *core.Signal[float64]
+			app, _ := start(t, desktopEnv, func(cx *core.Scope) core.Node {
+				value = core.NewSignal(cx, 0.0)
+				style := core.Style{Width: core.Pt(220)}
+				if c.axis == base.Vertical {
+					style = core.Style{Height: core.Pt(220)}
+				}
+				return core.View{Style: core.Style{AlignItems: core.AlignStart}, Children: []core.Node{
+					Slider{TestID: "level", Label: "Level", Axis: c.axis, Inverted: c.inverted, Value: value.Get, OnChange: value.Set, Step: 5, Style: style}}}
+			})
+			// 50 pt from the max end of a 200-point rail.
+			app.Touch(viewOf(app.Find("level").Children[0]), c.press).Lift()
+			if value.Get() != 75 {
+				t.Fatalf("a press at %v gave %v, want 75", c.press, value.Get())
+			}
+			app.Focus("level-thumb")
+			app.Key(c.key)
+			if value.Get() != 80 {
+				t.Fatalf("%s gave %v, want 80", c.key, value.Get())
+			}
+		})
+	}
 }

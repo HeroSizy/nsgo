@@ -1,6 +1,7 @@
 package ui
 
 import (
+	"math"
 	"slices"
 	"testing"
 	"time"
@@ -88,4 +89,32 @@ func canvasStrokes(v *nsgotest.View) []core.Color {
 		return out
 	}
 	return nil
+}
+
+// TestProgressRingStartAngle starts the arc at StartAngle and runs it the way CounterClockwise says.
+func TestProgressRingStartAngle(t *testing.T) {
+	app, _ := start(t, desktopEnv, func(cx *core.Scope) core.Node {
+		return core.View{Children: []core.Node{
+			ProgressRing{TestID: "plain", Value: func() float32 { return 25 }},
+			ProgressRing{TestID: "turned", Value: func() float32 { return 25 }, StartAngle: 90, CounterClockwise: true},
+		}}
+	})
+	arc := func(id string) driver.DrawOp {
+		var last driver.DrawOp
+		for _, child := range views(app.Find(id)) {
+			for _, op := range child.Ops {
+				if op.Kind == driver.DrawArc {
+					last = op
+				}
+			}
+		}
+		return last
+	}
+	near := func(a, b float32) bool { return math.Abs(float64(a-b)) < 1e-4 }
+	if a := arc("plain"); !near(a.A0, -math.Pi/2) || !near(a.A1, 0) || a.CCW {
+		t.Errorf("plain arc %v to %v ccw %v, want twelve to three clockwise", a.A0, a.A1, a.CCW)
+	}
+	if a := arc("turned"); !near(a.A0, 0) || !near(a.A1, -math.Pi/2) || !a.CCW {
+		t.Errorf("turned arc %v to %v ccw %v, want three to twelve counterclockwise", a.A0, a.A1, a.CCW)
+	}
 }

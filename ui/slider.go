@@ -24,6 +24,10 @@ const (
 // and marks them under the track, up to 60 of them; at 0 the keys move a
 // hundredth of the range.
 type Slider struct {
+	// Axis and Inverted are base.Slider's: a vertical slider has min at
+	// the bottom, or inverted at the top, and takes its height from Style.
+	Axis     base.Axis
+	Inverted bool
 	// ThumbRef and StartThumbRef are the end and start thumbs' refs.
 	ThumbRef, StartThumbRef *core.Ref
 	LabelledBy              []*core.Ref
@@ -103,10 +107,14 @@ func (s Slider) Render(cx *core.Scope) core.Node {
 		}
 	}
 	const height = sliderKnobH + 4
+	vertical := s.Axis == base.Vertical
 	sizeStyle := func() core.Style {
 		tall := core.Points(height)
 		if step := s.step(); step > 0 && !math.IsInf(step, 0) {
 			tall += 8
+		}
+		if vertical {
+			return core.Style{Width: core.Pt(tall)}.Merge(s.Style)
 		}
 		return core.Style{Height: core.Pt(tall)}.Merge(s.Style)
 	}
@@ -120,10 +128,19 @@ func (s Slider) Render(cx *core.Scope) core.Node {
 			count := int(n)
 			for i := 0; i <= count; i++ {
 				f := float32(float64(i) * step / (hi - lo))
-				marks = append(marks, core.View{PointerEvents: core.PointerEventsNone,
-					Style: core.Style{Position: core.Absolute, Top: core.Pt(sliderTrack/2 + 10), Left: core.Pct(f * 100), Width: core.Pt(2), Height: core.Pt(2),
-						CornerRadius: 1, Margin: core.Edges{Left: -1}},
-					StyleFunc: Filled(colors.Track)})
+				mark := core.Style{Position: core.Absolute, Width: core.Pt(2), Height: core.Pt(2), CornerRadius: 1}
+				if vertical {
+					if !s.Inverted {
+						f = 1 - f
+					}
+					mark.Left, mark.Top, mark.Margin = core.Pt(sliderTrack/2+10), core.Pct(f*100), core.Edges{Top: -1}
+				} else {
+					if s.Inverted {
+						f = 1 - f
+					}
+					mark.Top, mark.Left, mark.Margin = core.Pt(sliderTrack/2+10), core.Pct(f*100), core.Edges{Left: -1}
+				}
+				marks = append(marks, core.View{PointerEvents: core.PointerEventsNone, Style: mark, StyleFunc: Filled(colors.Track)})
 			}
 		}
 		return core.Group(marks)
@@ -143,17 +160,29 @@ func (s Slider) Render(cx *core.Scope) core.Node {
 	if valueText == nil {
 		valueText = func(v float64) string { return strconv.FormatFloat(v, 'f', -1, 64) }
 	}
-	return base.Slider{Value: value, OnChange: change,
+	// A vertical slider turns the track and the knob a quarter.
+	box := core.Style{MinWidth: core.Pt(80)}
+	track := core.Style{Height: core.Pct(100)}
+	rail := core.Style{Height: core.Pt(sliderTrack), Margin: core.Edges{Top: (height - sliderTrack) / 2, Left: sliderKnobW / 2, Right: sliderKnobW / 2}}
+	knobW, knobH := sliderKnobW, sliderKnobH
+	if vertical {
+		box = core.Style{MinHeight: core.Pt(80)}
+		track = core.Style{FlexGrow: 1, Direction: core.Row}
+		rail = core.Style{Width: core.Pt(sliderTrack), Margin: core.Edges{Left: (height - sliderTrack) / 2, Top: sliderKnobW / 2, Bottom: sliderKnobW / 2}}
+		knobW, knobH = sliderKnobH, sliderKnobW
+	}
+	rail.CornerRadius = sliderTrack / 2
+	return base.Slider{Value: value, OnChange: change, Axis: s.Axis, Inverted: s.Inverted,
 		Min: func() float64 { lo, _ := s.bounds(); return lo }, Max: func() float64 { _, hi := s.bounds(); return hi }, Step: s.step, Disabled: s.Disabled,
 		ThumbRef: s.ThumbRef, StartThumbRef: s.StartThumbRef, LabelledBy: s.LabelledBy, Invalid: s.Invalid, Label: label, StartLabel: startLabel, ValueText: valueText, TestID: s.TestID, ThumbTestID: thumb, StartThumbTestID: startThumb, Marks: []core.Node{marks},
-		Style:              core.Style{MinWidth: core.Pt(80), Disabled: Dimmed()}.Merge(s.Style),
+		Style:              box.Merge(core.Style{Disabled: Dimmed()}).Merge(s.Style),
 		StyleFunc:          sizeStyle,
-		TrackStyle:         core.Style{Height: core.Pct(100)},
-		IndicatorStyle:     core.Style{Height: core.Pt(sliderTrack), CornerRadius: sliderTrack / 2, Margin: core.Edges{Top: (height - sliderTrack) / 2, Left: sliderKnobW / 2, Right: sliderKnobW / 2}},
+		TrackStyle:         track,
+		IndicatorStyle:     rail,
 		IndicatorStyleFunc: Filled(colors.Line),
 		RangeStyle:         core.Style{CornerRadius: sliderTrack / 2},
 		RangeStyleFunc:     Filled(colors.AccentFill),
-		ThumbStyle: core.Style{Width: core.Pt(sliderKnobW), Height: core.Pt(sliderKnobH), CornerRadius: sliderKnobH / 2,
+		ThumbStyle: core.Style{Width: core.Pt(knobW), Height: core.Pt(knobH), CornerRadius: sliderKnobH / 2,
 			Transition: core.Transition{Duration: quick.Duration, Easing: core.EaseOut, Properties: core.TransitionTransform}},
 		ThumbStyleFunc: func() core.Style {
 			return FinOf(cx).Knob().Over(core.Style{Background: colors.Knob(), BorderWidth: 1, BorderColor: colors.Border(), FocusVisible: FocusRing(cx, 2),

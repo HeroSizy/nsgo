@@ -12,13 +12,17 @@ import (
 // ringSize is a ProgressRing's and a Spinner's diameter by default.
 const ringSize core.Points = 32
 
-// ProgressRing is Progress as a ring: the accent, or Tint, runs clockwise from twelve o'clock over a track, or, Indeterminate, a quarter of it turns once every 1.4 s, still under reduced motion. Value is from 0 to 100, as Progress's. Size is its diameter, 32 pt when 0; LineWidth is the track and arc width, a tenth of the diameter and 3 pt at most when 0.
+// ProgressRing is Progress as a ring: the accent, or Tint, runs clockwise from twelve o'clock over a track, or from StartAngle and counterclockwise as they say, or, Indeterminate, a quarter of it turns once every 1.4 s, still under reduced motion. Value is from 0 to 100, as Progress's. Size is its diameter, 32 pt when 0; LineWidth is the track and arc width, a tenth of the diameter and 3 pt at most when 0.
 type ProgressRing struct {
 	Value         func() float32
 	Indeterminate func() bool
 	Size          core.Points
 	// LineWidth is the track's and arc's width. When 0, it is a tenth of Size and at most 3 pt.
 	LineWidth core.Points
+	// StartAngle is where the arc starts, in degrees clockwise from twelve o'clock.
+	StartAngle float32
+	// CounterClockwise runs the arc, and an indeterminate ring's turn, counterclockwise.
+	CounterClockwise bool
 	// Tint colors the arc, the accent when nil, and the track under it, a quarter as opaque, where the theme's line would not show, such as on an accent fill.
 	Tint func() core.Color
 	// Label names the task for assistive technology.
@@ -49,9 +53,13 @@ func (p ProgressRing) Render(cx *core.Scope) core.Node {
 		return min(max(v, 0), 100)
 	}
 	turn := core.NewAnimatedValue(cx, 0)
+	turnTo := 360.0
+	if p.CounterClockwise {
+		turnTo = -360
+	}
 	if p.Indeterminate != nil && !ReduceMotion(cx) {
 		cx.StartAnimation(core.ValueKeyframes(turn, core.KeyframeTiming{Duration: 1400 * time.Millisecond, Iterations: core.Forever},
-			core.Stops(0, 360)...), nil)
+			core.Stops(0, turnTo)...), nil)
 	}
 	draw := func(d *core.Drawing, s core.Size) {
 		c := colors.Now()
@@ -73,14 +81,18 @@ func (p ProgressRing) Render(cx *core.Scope) core.Node {
 			track = Alpha(arc, 0.25)
 		}
 		d.BeginPath().Arc(x, y, r, 0, 2*math.Pi, false).SetStrokeColor(track).Stroke()
-		start, sweep := float32(-math.Pi/2), value()/100*2*math.Pi
+		start, sweep := (p.StartAngle-90)*math.Pi/180, value()/100*2*math.Pi
 		if is(p.Indeterminate) {
 			sweep = math.Pi / 2
 		}
 		if sweep <= 0 {
 			return
 		}
-		d.BeginPath().Arc(x, y, r, start, start+sweep, false).SetStrokeColor(arc).Stroke()
+		end := start + sweep
+		if p.CounterClockwise {
+			end = start - sweep
+		}
+		d.BeginPath().Arc(x, y, r, start, end, p.CounterClockwise).SetStrokeColor(arc).Stroke()
 	}
 	// The ring is drawn; base's bar is its semantics.
 	return base.Progress{TestID: p.TestID, Label: p.Label, Value: value, Indeterminate: p.Indeterminate,

@@ -44,6 +44,14 @@ ui.Slider{Value: position.Get, OnChange: position.Set, MaxFunc: duration.Get, La
 
 In TSX, `min={minimum()}`, `max={duration()}` and `step={step()}` follow their signals in place; `max={0}` collapses the range, as a `MaxFunc` returning 0 does.
 
+## Direction
+
+`Axis: base.Vertical` stands the slider up, with its minimum at the bottom; give it a height in `Style`. `Inverted` puts the minimum at the other end: the top of a vertical slider, the end of a horizontal one. The arrow keys along the track follow the direction. `ui.Progress` takes the same `Axis` and `Inverted`.
+
+```go
+ui.Slider{Value: level.Get, OnChange: level.Set, Axis: base.Vertical, Label: "Level", Style: core.Style{Height: core.Pt(160)}}
+```
+
 ## Behavior
 
 A drag follows the pointer and reports `OnChange` while it moves. The arrow keys move a focused knob by a step, Home and End go to the ends, and Page Up and Page Down move further. `ui.Slider` marks the steps under the track when `Step` is above 0, up to 60 marks.

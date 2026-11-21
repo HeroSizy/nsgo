@@ -1,6 +1,7 @@
 package main
 
 import (
+	"github.com/nsgo-dev/nsgo/base"
 	"github.com/nsgo-dev/nsgo/core"
 
 	"github.com/nsgo-dev/nsgo/examples/gallery/locales"
@@ -72,14 +73,18 @@ func sliderPlayground(cx *core.Scope) core.Node {
 	tr := locales.For(cx)
 	value, high, step := core.NewSignal(cx, 30.0), core.NewSignal(cx, 70.0), core.NewSignal(cx, 1.0)
 	ranged, disabled := core.NewSignal(cx, false), core.NewSignal(cx, false)
-	return Playground{Title: "Slider", Fill: true, Base: baseSliderForm(cx, value, high, step, ranged, disabled), Stage: func() core.Node {
-		s := ui.Slider{Label: tr.LibVolume(), LowLabel: tr.LibMinimum(), HighLabel: tr.LibMaximum(), Step: step.Get(), Disabled: disabled.Get,
-			Value: value.Get, OnChange: value.Set}
-		if ranged.Get() {
-			s.High, s.OnHighChange = high.Get, high.Set
-		}
-		return s
-	}, BaseKnobs: []core.Node{numberKnob("Step", step, 1, 25, 1), boolKnob("Range", ranged), boolKnob("Disabled", disabled)}}
+	axis, inverted := core.NewSignal(cx, base.Horizontal), core.NewSignal(cx, false)
+	return Playground{Title: "Slider", Fill: true, Base: baseSliderForm(cx, value, high, step, ranged, disabled, axis, inverted), Stage: func() core.Node {
+		return alongAxis(axis.Get(), func(style core.Style) core.Node {
+			s := ui.Slider{Label: tr.LibVolume(), LowLabel: tr.LibMinimum(), HighLabel: tr.LibMaximum(), Step: step.Get(), Disabled: disabled.Get,
+				Axis: axis.Get(), Inverted: inverted.Get(), Value: value.Get, OnChange: value.Set, Style: style}
+			if ranged.Get() {
+				s.High, s.OnHighChange = high.Get, high.Set
+			}
+			return s
+		})
+	}, BaseKnobs: []core.Node{numberKnob("Step", step, 1, 25, 1), boolKnob("Range", ranged), boolKnob("Disabled", disabled),
+		axisKnob(axis), boolKnob("Inverted", inverted)}}
 }
 
 func ratingCard(cx *core.Scope) core.Node {

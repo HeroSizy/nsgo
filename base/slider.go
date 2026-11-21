@@ -77,8 +77,11 @@ type Slider struct {
 	Step     func() float64
 	Scale    func() SliderScale
 	// Axis is the direction of the track, min at the start, or at the
-	// bottom of a vertical one. Read as it is made.
+	// bottom of a vertical one; Inverted puts min at the other end, the
+	// end of a horizontal track or the top of a vertical one, and the
+	// arrow keys along the track follow. Both are read as it is made.
 	Axis     Axis
+	Inverted bool
 	Disabled func() bool
 	// LabelledBy applies to both thumbs, as a core.View's.
 	LabelledBy []*core.Ref
@@ -143,7 +146,8 @@ type sliderCtl struct {
 	cx       *core.Scope
 	own      *core.Signal[SliderValue]
 	pending  *core.Signal[*SliderValue]
-	mirrored func() bool
+	// backward holds when max lies toward the indicator's top or left.
+	backward func() bool
 	rail     core.Bounds
 	drag     *sliderDrag
 }
@@ -221,10 +225,13 @@ func (c *sliderCtl) length() float64 {
 
 // along is points from the indicator's min end of p, a point in the track.
 func (c *sliderCtl) along(p core.Point) float64 {
+	vertical, back := c.s.Axis == Vertical, core.Untracked(c.cx, c.backward)
 	switch {
-	case c.s.Axis == Vertical:
+	case vertical && back:
 		return float64(c.rail.Origin.Y + c.rail.Size.Height - p.Y)
-	case core.Untracked(c.cx, c.mirrored):
+	case vertical:
+		return float64(p.Y - c.rail.Origin.Y)
+	case back:
 		return float64(c.rail.Origin.X + c.rail.Size.Width - p.X)
 	}
 	return float64(p.X - c.rail.Origin.X)
@@ -232,13 +239,14 @@ func (c *sliderCtl) along(p core.Point) float64 {
 
 // offset is how far a drag went toward max.
 func (c *sliderCtl) offset(e core.ResponderEvent) float64 {
-	switch {
-	case c.s.Axis == Vertical:
-		return -float64(e.Gesture.Delta.Y)
-	case core.Untracked(c.cx, c.mirrored):
-		return -float64(e.Gesture.Delta.X)
+	d := e.Gesture.Delta.X
+	if c.s.Axis == Vertical {
+		d = e.Gesture.Delta.Y
 	}
-	return float64(e.Gesture.Delta.X)
+	if core.Untracked(c.cx, c.backward) {
+		return -float64(d)
+	}
+	return float64(d)
 }
 
 // pressTrack has the nearer thumb jump to the value under the pointer,
@@ -359,12 +367,12 @@ func (c *sliderCtl) thumb(start bool, focused *core.Signal[int]) core.Node {
 				look = s.ThumbStyleFunc()
 			}
 			f := float32(c.fraction(start))
-			switch {
-			case s.Axis == Vertical:
-				look.Top = core.Pct((1 - f) * 100)
-			case c.mirrored():
-				look.Left = core.Pct((1 - f) * 100)
-			default:
+			if c.backward() {
+				f = 1 - f
+			}
+			if s.Axis == Vertical {
+				look.Top = core.Pct(f * 100)
+			} else {
 				look.Left = core.Pct(f * 100)
 			}
 			return look
@@ -403,7 +411,12 @@ func (c *sliderCtl) thumb(start bool, focused *core.Signal[int]) core.Node {
 func (s Slider) Render(cx *core.Scope) core.Node {
 	env := cx.Env()
 	c := &sliderCtl{s: s, cx: cx, own: core.NewSignal(cx, s.DefaultValue), pending: core.NewSignal[*SliderValue](cx, nil),
-		mirrored: func() bool { return s.Axis == Horizontal && env.RTL() }}
+		backward: func() bool {
+			if s.Axis == Vertical {
+				return !s.Inverted
+			}
+			return env.RTL() != s.Inverted
+		}}
 	focused := core.NewSignal(cx, 0)
 	nudge := func(move func(numberRange, float64) float64) func() {
 		return func() {
@@ -416,8 +429,16 @@ func (s Slider) Render(cx *core.Scope) core.Node {
 		return nudge(func(r numberRange, v float64) float64 { return r.stepBy(v, steps) })
 	}
 	page := func(d float64) func() { return nudge(func(r numberRange, v float64) float64 { return r.page(v, d) }) }
+	// An inverted track's arrows along it trade places, so each moves the
+	// thumb its way.
+	right, up := 1.0, 1.0
+	if s.Inverted && s.Axis == Vertical {
+		up = -1
+	} else if s.Inverted {
+		right = -1
+	}
 	keys := bindWhile(func() bool { return focused.Get() != 0 }, core.KeyNotEditing, s.Axis == Horizontal,
-		controlKey{"right", true, by(1)}, controlKey{"up", true, by(1)}, controlKey{"left", true, by(-1)}, controlKey{"down", true, by(-1)},
+		controlKey{"right", true, by(right)}, controlKey{"up", true, by(up)}, controlKey{"left", true, by(-right)}, controlKey{"down", true, by(-up)},
 		controlKey{"pageup", true, page(1)}, controlKey{"pagedown", true, page(-1)},
 		controlKey{"home", false, nudge(func(r numberRange, _ float64) float64 { return r.min })},
 		controlKey{"end", false, nudge(func(r numberRange, _ float64) float64 { return r.max })})
@@ -439,13 +460,15 @@ func (s Slider) Render(cx *core.Scope) core.Node {
 				start = float32(c.fraction(true))
 			}
 			end := float32(c.fraction(false))
-			switch {
-			case s.Axis == Vertical:
-				look.Bottom, look.Top = core.Pct(start*100), core.Pct((1-end)*100)
-			case c.mirrored():
-				look.Left, look.Right = core.Pct((1-end)*100), core.Pct(start*100)
-			default:
-				look.Left, look.Right = core.Pct(start*100), core.Pct((1-end)*100)
+			// near is the edge toward the track's origin, far the other.
+			near, far := core.Pct(start*100), core.Pct((1-end)*100)
+			if c.backward() {
+				near, far = far, near
+			}
+			if s.Axis == Vertical {
+				look.Top, look.Bottom = near, far
+			} else {
+				look.Left, look.Right = near, far
 			}
 			return look
 		}}

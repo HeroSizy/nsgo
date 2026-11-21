@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"slices"
 
+	"github.com/nsgo-dev/nsgo/base"
 	"github.com/nsgo-dev/nsgo/core"
 
 	"github.com/nsgo-dev/nsgo/examples/gallery/locales"
@@ -74,6 +75,20 @@ func numberKnob(name string, s *core.Signal[float64], lo, hi, step float64) core
 
 // stageRow lays a stage's variants side by side, on more rows where they do
 // not fit.
+// axisKnob picks a track's direction.
+func axisKnob(axis *core.Signal[base.Axis]) core.Node {
+	return choiceKnob("Axis", axis, options([]base.Axis{base.Horizontal, base.Vertical}, "Horizontal", "Vertical")...)
+}
+
+// alongAxis is a track's style for a stage: a vertical one 160 pt high,
+// centered as stageRow centers.
+func alongAxis(axis base.Axis, track func(core.Style) core.Node) core.Node {
+	if axis != base.Vertical {
+		return track(core.Style{})
+	}
+	return stageRow(track(core.Style{Height: core.Pt(160)}))
+}
+
 func stageRow(variants ...core.Node) core.Node {
 	return core.View{Style: core.Style{Direction: core.Row, Wrap: core.Wrap, AlignItems: core.AlignCenter, JustifyContent: core.JustifyCenter, Gap: 12}, Children: variants}
 }

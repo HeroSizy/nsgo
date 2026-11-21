@@ -222,28 +222,39 @@ func baseSwitchForm(cx *core.Scope, checked, disabled *core.Signal[bool]) Form {
 	}}
 }
 
-func baseSliderForm(cx *core.Scope, start, end, step *core.Signal[float64], ranged, disabled *core.Signal[bool]) Form {
+func baseSliderForm(cx *core.Scope, start, end, step *core.Signal[float64], ranged, disabled *core.Signal[bool], axis *core.Signal[base.Axis], inverted *core.Signal[bool]) Form {
 	tr := locales.For(cx)
 	colors := ui.ColorsOf(cx)
 	return Form{Name: "base.Slider", Fill: true, Stage: func() core.Node {
-		return base.Slider{Label: tr.LibVolume(), StartLabel: tr.LibMinimum(), Step: step.Get, Disabled: disabled.Get,
-			Value: func() base.SliderValue {
-				if ranged.Get() {
-					return base.RangeValue(start.Get(), end.Get())
-				}
-				return base.SingleValue(start.Get())
-			},
-			OnChange: func(v base.SliderValue) {
-				start.Set(v.Start)
-				if v.Range {
-					end.Set(v.End)
-				}
-			},
-			Style:          core.Style{Height: core.Pt(20), Disabled: &core.Style{Opacity: core.Alpha(0.4)}},
-			TrackStyle:     core.Style{Height: core.Pt(20)},
-			IndicatorStyle: core.Style{Height: core.Pt(4), CornerRadius: 2, Margin: core.Edges{Top: 8}}, IndicatorStyleFunc: ui.Filled(colors.Line),
-			RangeStyle: core.Style{CornerRadius: 2}, RangeStyleFunc: ui.Filled(colors.Text),
-			ThumbStyle: core.Style{Width: core.Pt(14), Height: core.Pt(14), CornerRadius: 7}, ThumbStyleFunc: ui.Filled(colors.Text)}
+		return alongAxis(axis.Get(), func(style core.Style) core.Node {
+			box := core.Style{Height: core.Pt(20)}
+			track := core.Style{Height: core.Pt(20)}
+			rail := core.Style{Height: core.Pt(4), Margin: core.Edges{Top: 8}}
+			if axis.Get() == base.Vertical {
+				box = core.Style{Width: core.Pt(20)}
+				track = core.Style{Width: core.Pt(20), FlexGrow: 1, Direction: core.Row}
+				rail = core.Style{Width: core.Pt(4), Margin: core.Edges{Left: 8}}
+			}
+			rail.CornerRadius = 2
+			return base.Slider{Label: tr.LibVolume(), StartLabel: tr.LibMinimum(), Step: step.Get, Disabled: disabled.Get, Axis: axis.Get(), Inverted: inverted.Get(),
+				Value: func() base.SliderValue {
+					if ranged.Get() {
+						return base.RangeValue(start.Get(), end.Get())
+					}
+					return base.SingleValue(start.Get())
+				},
+				OnChange: func(v base.SliderValue) {
+					start.Set(v.Start)
+					if v.Range {
+						end.Set(v.End)
+					}
+				},
+				Style:          box.Merge(style).Merge(core.Style{Disabled: &core.Style{Opacity: core.Alpha(0.4)}}),
+				TrackStyle:     track,
+				IndicatorStyle: rail, IndicatorStyleFunc: ui.Filled(colors.Line),
+				RangeStyle: core.Style{CornerRadius: 2}, RangeStyleFunc: ui.Filled(colors.Text),
+				ThumbStyle: core.Style{Width: core.Pt(14), Height: core.Pt(14), CornerRadius: 7}, ThumbStyleFunc: ui.Filled(colors.Text)}
+		})
 	}}
 }
 
@@ -347,13 +358,20 @@ func baseTreeForm(cx *core.Scope, last *core.Signal[string]) Form {
 	}}
 }
 
-func baseProgressForm(cx *core.Scope, value *core.Signal[float64], indeterminate *core.Signal[bool]) Form {
+func baseProgressForm(cx *core.Scope, value *core.Signal[float64], indeterminate *core.Signal[bool], axis *core.Signal[base.Axis], inverted *core.Signal[bool]) Form {
 	tr := locales.For(cx)
 	colors := ui.ColorsOf(cx)
 	return Form{Name: "base.Progress", Fill: true, Stage: func() core.Node {
-		return base.Progress{Label: tr.LibProgress(), Value: func() float32 { return float32(value.Get()) }, Indeterminate: indeterminate.Get,
-			TrackStyle: core.Style{Height: core.Pt(6), CornerRadius: 3, Overflow: core.Hidden}, TrackStyleFunc: ui.Filled(colors.Line),
-			IndicatorStyle: core.Style{Height: core.Pct(100)}, IndicatorStyleFunc: ui.Filled(colors.Text)}
+		return alongAxis(axis.Get(), func(style core.Style) core.Node {
+			track, fill := core.Style{Height: core.Pt(6)}, core.Style{Height: core.Pct(100)}
+			if axis.Get() == base.Vertical {
+				track, fill = core.Style{Width: core.Pt(6), FlexGrow: 1}, core.Style{Width: core.Pct(100)}
+			}
+			return base.Progress{Label: tr.LibProgress(), Value: func() float32 { return float32(value.Get()) }, Indeterminate: indeterminate.Get,
+				Axis: axis.Get(), Inverted: inverted.Get(), Style: style,
+				TrackStyle: track.Merge(core.Style{CornerRadius: 3, Overflow: core.Hidden}), TrackStyleFunc: ui.Filled(colors.Line),
+				IndicatorStyle: fill, IndicatorStyleFunc: ui.Filled(colors.Text)}
+		})
 	}}
 }
 

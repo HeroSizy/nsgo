@@ -3,6 +3,7 @@ package main
 import (
 	"time"
 
+	"github.com/nsgo-dev/nsgo/base"
 	"github.com/nsgo-dev/nsgo/base/toast"
 	"github.com/nsgo-dev/nsgo/core"
 
@@ -18,19 +19,24 @@ func progressCard(cx *core.Scope) core.Node {
 	value := core.NewSignal(cx, 40.0)
 	indeterminate := core.NewSignal(cx, false)
 	percent := func() float32 { return float32(value.Get()) }
-	return Playground{Title: "Progress", Fill: true, Base: baseProgressForm(cx, value, indeterminate), Stage: func() core.Node {
-		return ui.Progress{Label: tr.LibProgress(), Value: percent, Indeterminate: indeterminate.Get}
-	}, BaseKnobs: []core.Node{numberKnob("Value", value, 0, 100, 1), boolKnob("Indeterminate", indeterminate)}}
+	axis, inverted := core.NewSignal(cx, base.Horizontal), core.NewSignal(cx, false)
+	return Playground{Title: "Progress", Fill: true, Base: baseProgressForm(cx, value, indeterminate, axis, inverted), Stage: func() core.Node {
+		return alongAxis(axis.Get(), func(style core.Style) core.Node {
+			return ui.Progress{Label: tr.LibProgress(), Value: percent, Indeterminate: indeterminate.Get, Axis: axis.Get(), Inverted: inverted.Get(), Style: style}
+		})
+	}, BaseKnobs: []core.Node{numberKnob("Value", value, 0, 100, 1), boolKnob("Indeterminate", indeterminate),
+		axisKnob(axis), boolKnob("Inverted", inverted)}}
 }
 
 func progressRingCard(cx *core.Scope) core.Node {
 	tr := locales.For(cx)
-	value, size := core.NewSignal(cx, 60.0), core.NewSignal(cx, 44.0)
-	indeterminate := core.NewSignal(cx, false)
+	value, size, angle := core.NewSignal(cx, 60.0), core.NewSignal(cx, 44.0), core.NewSignal(cx, 0.0)
+	indeterminate, counter := core.NewSignal(cx, false), core.NewSignal(cx, false)
 	return Playground{Title: "ProgressRing", Stage: func() core.Node {
 		return ui.ProgressRing{Label: tr.LibProgress(), Size: core.Points(size.Get()), Indeterminate: indeterminate.Get,
-			Value: func() float32 { return float32(value.Get()) }}
-	}, Knobs: []core.Node{numberKnob("Value", value, 0, 100, 1), numberKnob("Size", size, 20, 72, 4), boolKnob("Indeterminate", indeterminate)}}
+			StartAngle: float32(angle.Get()), CounterClockwise: counter.Get(), Value: func() float32 { return float32(value.Get()) }}
+	}, Knobs: []core.Node{numberKnob("Value", value, 0, 100, 1), numberKnob("Size", size, 20, 72, 4), numberKnob("StartAngle", angle, 0, 345, 15),
+		boolKnob("CounterClockwise", counter), boolKnob("Indeterminate", indeterminate)}}
 }
 
 func spinnerPlayground(cx *core.Scope) core.Node {
