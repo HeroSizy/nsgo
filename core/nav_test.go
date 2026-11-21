@@ -237,6 +237,9 @@ func TestStatusBarLayers(t *testing.T) {
 		{func() { light.Set(true); light.Set(false) }, nil},
 		{func() { open.Set(false) }, nil},
 		{func() { h.tree.Dispatch(driver.Event{Kind: driver.EventBack}) }, []driver.StatusBarConfig{{Style: StatusBarDark}}},
+		// Immersive hides the bar too, and turning it off brings it back.
+		{func() { root.SetStatusBar(StatusBarSetting{Immersive: ToggleOn}) }, []driver.StatusBarConfig{{Style: StatusBarDark, Hidden: true, Immersive: true}}},
+		{func() { root.SetStatusBar(StatusBarSetting{Immersive: ToggleOff}) }, []driver.StatusBarConfig{{Style: StatusBarDark}}},
 	}
 	for i, s := range steps {
 		s.do()

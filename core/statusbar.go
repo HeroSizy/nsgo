@@ -34,6 +34,12 @@ type StatusBarSetting struct {
 	Hidden     Toggle
 	// Animated animates the change to this layer's settings.
 	Animated Toggle
+	// Immersive hides the status bar and every other system bar or
+	// gesture hint the platform lets an app hide, for a full-screen game
+	// or player: Android's navigation bar, until a swipe from the edge
+	// brings the bars back for a moment, and iOS's home indicator, with
+	// swipes from the screen's edges asking twice before they leave.
+	Immersive Toggle
 }
 
 func (s StatusBarSetting) over(below StatusBarSetting) StatusBarSetting {
@@ -42,11 +48,13 @@ func (s StatusBarSetting) over(below StatusBarSetting) StatusBarSetting {
 	}
 	s.Hidden = s.Hidden.over(below.Hidden)
 	s.Animated = s.Animated.over(below.Animated)
+	s.Immersive = s.Immersive.over(below.Immersive)
 	return s
 }
 
 func (s StatusBarSetting) config() driver.StatusBarConfig {
-	c := driver.StatusBarConfig{Style: s.Foreground, Hidden: s.Hidden == ToggleOn, Animated: s.Animated == ToggleOn}
+	immersive := s.Immersive == ToggleOn
+	c := driver.StatusBarConfig{Style: s.Foreground, Hidden: s.Hidden == ToggleOn || immersive, Animated: s.Animated == ToggleOn, Immersive: immersive}
 	if c.Style == StatusBarInherit {
 		c.Style = StatusBarAuto
 	}

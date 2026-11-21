@@ -127,6 +127,16 @@ func registerNav() {
 				v := sheets[self]
 				return v != nil && v.surface.hideBar
 			}},
+			{Cmd: sel("prefersHomeIndicatorAutoHidden"), Fn: func(self objc.ID, _ objc.SEL) bool {
+				v := sheets[self]
+				return v != nil && v.surface.immersive
+			}},
+			{Cmd: sel("preferredScreenEdgesDeferringSystemGestures"), Fn: func(self objc.ID, _ objc.SEL) uint {
+				if v := sheets[self]; v != nil {
+					return v.surface.deferredEdges()
+				}
+				return 0
+			}},
 			{Cmd: sel("preferredStatusBarUpdateAnimation"), Fn: func(self objc.ID, _ objc.SEL) int {
 				if v := sheets[self]; v != nil {
 					return v.surface.barAnimation()
@@ -1094,6 +1104,16 @@ func (s *surface) updateOrientations() {
 	}
 }
 
+// deferredEdges are the UIRectEdge mask whose system swipes ask twice:
+// every edge while immersive, none otherwise.
+func (s *surface) deferredEdges() uint {
+	const uiRectEdgeAll = 15
+	if s.immersive {
+		return uiRectEdgeAll
+	}
+	return 0
+}
+
 // setStatusBar applies the status bar the core merged.
 func (s *surface) setStatusBar(c *driver.StatusBarConfig) {
 	const lightContent, darkContent = 1, 3
@@ -1104,14 +1124,19 @@ func (s *surface) setStatusBar(c *driver.StatusBarConfig) {
 	case driver.StatusBarLight:
 		s.statusBar = lightContent
 	}
-	s.hideBar, s.barAnimated = c.Hidden, c.Animated
+	s.hideBar, s.barAnimated, s.immersive = c.Hidden, c.Animated, c.Immersive
 	update := func() {
 		// An embedding host's controller asks the view (NSGoView's
 		// preferredStatusBarStyle) if it forwards it.
-		s.viewController().Send(sel("setNeedsStatusBarAppearanceUpdate"))
+		refresh := func(c objc.ID) {
+			c.Send(sel("setNeedsStatusBarAppearanceUpdate"))
+			c.Send(sel("setNeedsUpdateOfHomeIndicatorAutoHidden"))
+			c.Send(sel("setNeedsUpdateOfScreenEdgesDeferringSystemGestures"))
+		}
+		refresh(s.viewController())
 		for c, v := range sheets {
 			if v.surface == s {
-				c.Send(sel("setNeedsStatusBarAppearanceUpdate"))
+				refresh(c)
 			}
 		}
 	}

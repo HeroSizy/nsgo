@@ -233,6 +233,8 @@ public class NsgoView extends FrameLayout implements NsgoEngine.Listener {
     private final Set<Integer> consumedKeys = new HashSet<>();
     private int statusBarStyle;
     private boolean statusBarHidden;
+    // statusBarImmersive hides the navigation bar too, until a swipe.
+    private boolean statusBarImmersive;
     /** The pan, pinch and rotation of the touch in progress, on the UI thread. */
     private final Gestures gestures;
     /** The view the root node shows in, among the accessory bar. */
@@ -2970,8 +2972,11 @@ public class NsgoView extends FrameLayout implements NsgoEngine.Listener {
             }
             case Protocol.ITEM_STATUS_BAR:
                 statusBarStyle = in.readUnsignedByte();
-                // Hidden, then animated, which the system does as it likes.
-                statusBarHidden = Protocol.flag(in.readUnsignedByte(), 0);
+                // Hidden, animated (which the system does as it likes),
+                // then immersive.
+                int barFlags = in.readUnsignedByte();
+                statusBarHidden = Protocol.flag(barFlags, 0);
+                statusBarImmersive = Protocol.flag(barFlags, 2);
                 systemBars();
                 break;
             case Protocol.ITEM_TITLE: {
@@ -3564,8 +3569,12 @@ public class NsgoView extends FrameLayout implements NsgoEngine.Listener {
                     | (dark ? 0 : WindowInsetsController.APPEARANCE_LIGHT_NAVIGATION_BARS);
             bars.setSystemBarsAppearance(appearance, light);
             bars.setSystemBarsBehavior(WindowInsetsController.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE);
-            if (statusBarHidden) bars.hide(WindowInsets.Type.statusBars());
-            else bars.show(WindowInsets.Type.statusBars());
+            if (statusBarImmersive) bars.hide(WindowInsets.Type.systemBars());
+            else {
+                bars.show(WindowInsets.Type.navigationBars());
+                if (statusBarHidden) bars.hide(WindowInsets.Type.statusBars());
+                else bars.show(WindowInsets.Type.statusBars());
+            }
             return;
         }
         int flags = SYSTEM_UI_FLAG_LAYOUT_STABLE | SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
@@ -3573,6 +3582,7 @@ public class NsgoView extends FrameLayout implements NsgoEngine.Listener {
         if (darkIcons) flags |= SYSTEM_UI_FLAG_LIGHT_STATUS_BAR;
         if (!dark) flags |= SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR;
         if (statusBarHidden) flags |= SYSTEM_UI_FLAG_FULLSCREEN;
+        if (statusBarImmersive) flags |= SYSTEM_UI_FLAG_FULLSCREEN | SYSTEM_UI_FLAG_HIDE_NAVIGATION | SYSTEM_UI_FLAG_IMMERSIVE_STICKY;
         getRootView().setSystemUiVisibility(flags);
     }
 

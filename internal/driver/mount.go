@@ -1453,6 +1453,11 @@ type StatusBarConfig struct {
 	Style    StatusBarStyle
 	Hidden   bool
 	Animated bool
+	// Immersive hides every system bar and gesture hint the platform lets
+	// an app hide: on Android the navigation bar too, until a swipe from
+	// the edge shows them for a moment; on iOS the home indicator, with
+	// edge swipes asking twice. It implies Hidden.
+	Immersive bool
 }
 
 // VideoConfig is everything a video plays with (ItemVideo), with the
