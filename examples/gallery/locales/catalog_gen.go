@@ -87,7 +87,6 @@ var Parameters = map[string][]string{
 	"EditorDefinitionAt":           {"name", "line", "column"},
 	"EditorReplaced":               {"count"},
 	"EditorLinePressed":            {"line"},
-	"EditorProblemsCount":          {"count"},
 	"CompCharacters":               {"count"},
 	"CompAnnouncement":             {"n"},
 	"AnimViews":                    {"count"},
@@ -288,7 +287,6 @@ type Translation struct {
 	EditorDefinitionAt           func(name string, line int, column int) string
 	EditorReplaced               func(count int) string
 	EditorLinePressed            func(line int) string
-	EditorProblemsCount          func(count int) string
 	CompCharacters               func(count int) string
 	CompAnnouncement             func(n int) string
 	AnimViews                    func(count int) string
@@ -1432,41 +1430,22 @@ const (
 	textEditorFoldAll
 	textEditorUnfoldAll
 	textEditorNoAppOpensLinks
-	textEditorLongPressToSelect
-	textEditorRightClickForCommands
-	textEditorCodeActions
-	textEditorCompletionsAlsoAsYouType
-	textEditorTabTakesTheGraySuggestion
-	textEditorHoverForDocsAndProblems
-	textEditorHold
-	textEditorOverANameToUnderline
-	textEditorOr
-	textEditorClickGoToDefinition
 	textEditorFind
 	textEditorMatchCase
 	textEditorWholeWord
 	textEditorRegularExpression
 	textEditorPreviousMatch
 	textEditorNextMatch
-	textEditorCloseTheFindBar
 	textEditorReplace
 	textEditorReplaceAll
 	textEditorSource
 	textEditorCompleted
-	textEditorNoProblems
-	textEditorLanguage
 	textEditorFindAndReplace
-	textEditorEditorOptions
 	textEditorSoftWrap
-	textEditorLineNumbers
-	textEditorProblems
-	textEditorFindAndReplace2
-	textEditorKeys
-	textEditorTypescriptLanguageServer
-	textEditorResizeTheProblems
+	textEditorHideLineNumbers
+	textEditorShowWhitespace
+	textEditorReadOnly
 	textEditorOpenTheDescriptionOf
-	textEditorAnalyzing
-	textEditorToggleProblems
 	textCompLayoutAnimation
 	textCompAnimatelayoutThenChangeTheTree
 	textCompSpring
@@ -3759,41 +3738,22 @@ var keyOfText = [numTexts]string{
 	"editorFoldAll",
 	"editorUnfoldAll",
 	"editorNoAppOpensLinks",
-	"editorLongPressToSelect",
-	"editorRightClickForCommands",
-	"editorCodeActions",
-	"editorCompletionsAlsoAsYouType",
-	"editorTabTakesTheGraySuggestion",
-	"editorHoverForDocsAndProblems",
-	"editorHold",
-	"editorOverANameToUnderline",
-	"editorOr",
-	"editorClickGoToDefinition",
 	"editorFind",
 	"editorMatchCase",
 	"editorWholeWord",
 	"editorRegularExpression",
 	"editorPreviousMatch",
 	"editorNextMatch",
-	"editorCloseTheFindBar",
 	"editorReplace",
 	"editorReplaceAll",
 	"editorSource",
 	"editorCompleted",
-	"editorNoProblems",
-	"editorLanguage",
 	"editorFindAndReplace",
-	"editorEditorOptions",
 	"editorSoftWrap",
-	"editorLineNumbers",
-	"editorProblems",
-	"editorFindAndReplace2",
-	"editorKeys",
-	"editorTypescriptLanguageServer",
-	"editorResizeTheProblems",
+	"editorHideLineNumbers",
+	"editorShowWhitespace",
+	"editorReadOnly",
 	"editorOpenTheDescriptionOf",
-	"editorAnalyzing",
-	"editorToggleProblems",
 	"compLayoutAnimation",
 	"compAnimatelayoutThenChangeTheTree",
 	"compSpring",
@@ -6084,41 +6044,22 @@ var textsEn = i18n.NewTexts(""+
 	"Fold All"+
 	"Unfold All"+
 	"No app opens links"+
-	"Long-press to select"+
-	"Right-click for commands"+
-	" code actions"+
-	" completions (also as you type and after a dot)"+
-	"Tab takes the gray suggestion"+
-	"Hover for docs and problems"+
-	"Hold "+
-	" over a name to underline it"+
-	" or "+
-	"-click: go to definition"+
 	"Find"+
 	"Match case"+
 	"Whole word"+
 	"Regular expression"+
 	"Previous match"+
 	"Next match"+
-	"Close the find bar"+
 	"Replace"+
 	"Replace all"+
 	" source"+
 	"Completed "+
-	"No problems"+
-	"Language"+
 	"Find and replace"+
-	"Editor options"+
 	"Soft wrap"+
-	"Line numbers"+
-	"Problems"+
-	"Find and Replace"+
-	"Keys"+
-	"TypeScript language server"+
-	"Resize the problems"+
+	"Hide line numbers"+
+	"Show whitespace"+
+	"Read only"+
 	"Open the description of "+
-	"Analyzing…"+
-	"Toggle problems"+
 	"Layout animation"+
 	"AnimateLayout, then change the tree"+
 	"Spring"+
@@ -8406,41 +8347,22 @@ var textsEn = i18n.NewTexts(""+
 		8,
 		10,
 		18,
-		20,
-		24,
-		13,
-		47,
-		29,
-		27,
-		5,
-		28,
-		4,
-		24,
 		4,
 		10,
 		10,
 		18,
 		14,
 		10,
-		18,
 		7,
 		11,
 		7,
 		10,
-		11,
-		8,
 		16,
-		14,
 		9,
-		12,
-		8,
-		16,
-		4,
-		26,
-		19,
-		24,
-		12,
+		17,
 		15,
+		9,
+		24,
 		16,
 		35,
 		6,
@@ -10731,41 +10653,22 @@ var textsZhHans = i18n.NewTexts(""+
 	"全部折叠"+
 	"全部展开"+
 	"没有应用可以打开链接"+
-	"长按以选择"+
-	"右键点按查看命令"+
-	" 代码操作"+
-	" 补全（输入时和输入点号后也会出现）"+
-	"Tab 采用灰色建议"+
-	"悬停查看文档和问题"+
-	"按住 "+
-	" 并悬停在名称上以显示下划线"+
-	" 或 "+
-	"-点按：转到定义"+
 	"查找"+
 	"区分大小写"+
 	"全字匹配"+
 	"正则表达式"+
 	"上一个匹配"+
 	"下一个匹配"+
-	"关闭查找栏"+
 	"替换"+
 	"全部替换"+
 	" 来源"+
 	"已补全 "+
-	"没有问题"+
-	"语言"+
 	"查找和替换"+
-	"编辑器选项"+
 	"自动换行"+
-	"行号"+
-	"问题"+
-	"查找和替换"+
-	"按键"+
-	"TypeScript 语言服务器"+
-	"调整问题面板大小"+
+	"隐藏行号"+
+	"显示空白字符"+
+	"只读"+
 	"打开说明："+
-	"正在分析…"+
-	"显示或隐藏问题"+
 	"布局动画"+
 	"先调用 AnimateLayout，再修改树"+
 	"弹簧"+
@@ -13053,20 +12956,9 @@ var textsZhHans = i18n.NewTexts(""+
 		12,
 		12,
 		30,
-		15,
-		24,
-		13,
-		52,
-		22,
-		27,
-		7,
-		40,
-		5,
-		22,
 		6,
 		15,
 		12,
-		15,
 		15,
 		15,
 		15,
@@ -13074,20 +12966,12 @@ var textsZhHans = i18n.NewTexts(""+
 		12,
 		7,
 		10,
-		12,
-		6,
-		15,
 		15,
 		12,
-		6,
+		12,
+		18,
 		6,
 		15,
-		6,
-		26,
-		24,
-		15,
-		15,
-		21,
 		12,
 		38,
 		6,
@@ -14570,9 +14454,6 @@ func Supply(lang string, t Translation) {
 	}
 	if t.EditorLinePressed != nil {
 		s.EditorLinePressed = t.EditorLinePressed
-	}
-	if t.EditorProblemsCount != nil {
-		s.EditorProblemsCount = t.EditorProblemsCount
 	}
 	if t.CompCharacters != nil {
 		s.CompCharacters = t.CompCharacters
@@ -23315,94 +23196,6 @@ func EditorNoAppOpensLinks(cx *core.Scope) string { return For(cx).EditorNoAppOp
 // EditorNoAppOpensLinks is the package's EditorNoAppOpensLinks in the language of msgs.
 func (msgs Messages) EditorNoAppOpensLinks() string { return msgs.text(textEditorNoAppOpensLinks) }
 
-// EditorLongPressToSelect says "Long-press to select"
-// in the language the app shows under cx.
-func EditorLongPressToSelect(cx *core.Scope) string { return For(cx).EditorLongPressToSelect() }
-
-// EditorLongPressToSelect is the package's EditorLongPressToSelect in the language of msgs.
-func (msgs Messages) EditorLongPressToSelect() string { return msgs.text(textEditorLongPressToSelect) }
-
-// EditorRightClickForCommands says "Right-click for commands"
-// in the language the app shows under cx.
-func EditorRightClickForCommands(cx *core.Scope) string { return For(cx).EditorRightClickForCommands() }
-
-// EditorRightClickForCommands is the package's EditorRightClickForCommands in the language of msgs.
-func (msgs Messages) EditorRightClickForCommands() string {
-	return msgs.text(textEditorRightClickForCommands)
-}
-
-// EditorCodeActions says " code actions"
-// in the language the app shows under cx.
-func EditorCodeActions(cx *core.Scope) string { return For(cx).EditorCodeActions() }
-
-// EditorCodeActions is the package's EditorCodeActions in the language of msgs.
-func (msgs Messages) EditorCodeActions() string { return msgs.text(textEditorCodeActions) }
-
-// EditorCompletionsAlsoAsYouType says " completions (also as you type and after a dot)"
-// in the language the app shows under cx.
-func EditorCompletionsAlsoAsYouType(cx *core.Scope) string {
-	return For(cx).EditorCompletionsAlsoAsYouType()
-}
-
-// EditorCompletionsAlsoAsYouType is the package's EditorCompletionsAlsoAsYouType in the language of msgs.
-func (msgs Messages) EditorCompletionsAlsoAsYouType() string {
-	return msgs.text(textEditorCompletionsAlsoAsYouType)
-}
-
-// EditorTabTakesTheGraySuggestion says "Tab takes the gray suggestion"
-// in the language the app shows under cx.
-func EditorTabTakesTheGraySuggestion(cx *core.Scope) string {
-	return For(cx).EditorTabTakesTheGraySuggestion()
-}
-
-// EditorTabTakesTheGraySuggestion is the package's EditorTabTakesTheGraySuggestion in the language of msgs.
-func (msgs Messages) EditorTabTakesTheGraySuggestion() string {
-	return msgs.text(textEditorTabTakesTheGraySuggestion)
-}
-
-// EditorHoverForDocsAndProblems says "Hover for docs and problems"
-// in the language the app shows under cx.
-func EditorHoverForDocsAndProblems(cx *core.Scope) string {
-	return For(cx).EditorHoverForDocsAndProblems()
-}
-
-// EditorHoverForDocsAndProblems is the package's EditorHoverForDocsAndProblems in the language of msgs.
-func (msgs Messages) EditorHoverForDocsAndProblems() string {
-	return msgs.text(textEditorHoverForDocsAndProblems)
-}
-
-// EditorHold says "Hold "
-// in the language the app shows under cx.
-func EditorHold(cx *core.Scope) string { return For(cx).EditorHold() }
-
-// EditorHold is the package's EditorHold in the language of msgs.
-func (msgs Messages) EditorHold() string { return msgs.text(textEditorHold) }
-
-// EditorOverANameToUnderline says " over a name to underline it"
-// in the language the app shows under cx.
-func EditorOverANameToUnderline(cx *core.Scope) string { return For(cx).EditorOverANameToUnderline() }
-
-// EditorOverANameToUnderline is the package's EditorOverANameToUnderline in the language of msgs.
-func (msgs Messages) EditorOverANameToUnderline() string {
-	return msgs.text(textEditorOverANameToUnderline)
-}
-
-// EditorOr says " or "
-// in the language the app shows under cx.
-func EditorOr(cx *core.Scope) string { return For(cx).EditorOr() }
-
-// EditorOr is the package's EditorOr in the language of msgs.
-func (msgs Messages) EditorOr() string { return msgs.text(textEditorOr) }
-
-// EditorClickGoToDefinition says "-click: go to definition"
-// in the language the app shows under cx.
-func EditorClickGoToDefinition(cx *core.Scope) string { return For(cx).EditorClickGoToDefinition() }
-
-// EditorClickGoToDefinition is the package's EditorClickGoToDefinition in the language of msgs.
-func (msgs Messages) EditorClickGoToDefinition() string {
-	return msgs.text(textEditorClickGoToDefinition)
-}
-
 // EditorFind says "Find"
 // in the language the app shows under cx.
 func EditorFind(cx *core.Scope) string { return For(cx).EditorFind() }
@@ -23445,13 +23238,6 @@ func EditorNextMatch(cx *core.Scope) string { return For(cx).EditorNextMatch() }
 // EditorNextMatch is the package's EditorNextMatch in the language of msgs.
 func (msgs Messages) EditorNextMatch() string { return msgs.text(textEditorNextMatch) }
 
-// EditorCloseTheFindBar says "Close the find bar"
-// in the language the app shows under cx.
-func EditorCloseTheFindBar(cx *core.Scope) string { return For(cx).EditorCloseTheFindBar() }
-
-// EditorCloseTheFindBar is the package's EditorCloseTheFindBar in the language of msgs.
-func (msgs Messages) EditorCloseTheFindBar() string { return msgs.text(textEditorCloseTheFindBar) }
-
 // EditorReplace says "Replace"
 // in the language the app shows under cx.
 func EditorReplace(cx *core.Scope) string { return For(cx).EditorReplace() }
@@ -23480,33 +23266,12 @@ func EditorCompleted(cx *core.Scope) string { return For(cx).EditorCompleted() }
 // EditorCompleted is the package's EditorCompleted in the language of msgs.
 func (msgs Messages) EditorCompleted() string { return msgs.text(textEditorCompleted) }
 
-// EditorNoProblems says "No problems"
-// in the language the app shows under cx.
-func EditorNoProblems(cx *core.Scope) string { return For(cx).EditorNoProblems() }
-
-// EditorNoProblems is the package's EditorNoProblems in the language of msgs.
-func (msgs Messages) EditorNoProblems() string { return msgs.text(textEditorNoProblems) }
-
-// EditorLanguage says "Language"
-// in the language the app shows under cx.
-func EditorLanguage(cx *core.Scope) string { return For(cx).EditorLanguage() }
-
-// EditorLanguage is the package's EditorLanguage in the language of msgs.
-func (msgs Messages) EditorLanguage() string { return msgs.text(textEditorLanguage) }
-
 // EditorFindAndReplace says "Find and replace"
 // in the language the app shows under cx.
 func EditorFindAndReplace(cx *core.Scope) string { return For(cx).EditorFindAndReplace() }
 
 // EditorFindAndReplace is the package's EditorFindAndReplace in the language of msgs.
 func (msgs Messages) EditorFindAndReplace() string { return msgs.text(textEditorFindAndReplace) }
-
-// EditorEditorOptions says "Editor options"
-// in the language the app shows under cx.
-func EditorEditorOptions(cx *core.Scope) string { return For(cx).EditorEditorOptions() }
-
-// EditorEditorOptions is the package's EditorEditorOptions in the language of msgs.
-func (msgs Messages) EditorEditorOptions() string { return msgs.text(textEditorEditorOptions) }
 
 // EditorSoftWrap says "Soft wrap"
 // in the language the app shows under cx.
@@ -23515,51 +23280,26 @@ func EditorSoftWrap(cx *core.Scope) string { return For(cx).EditorSoftWrap() }
 // EditorSoftWrap is the package's EditorSoftWrap in the language of msgs.
 func (msgs Messages) EditorSoftWrap() string { return msgs.text(textEditorSoftWrap) }
 
-// EditorLineNumbers says "Line numbers"
+// EditorHideLineNumbers says "Hide line numbers"
 // in the language the app shows under cx.
-func EditorLineNumbers(cx *core.Scope) string { return For(cx).EditorLineNumbers() }
+func EditorHideLineNumbers(cx *core.Scope) string { return For(cx).EditorHideLineNumbers() }
 
-// EditorLineNumbers is the package's EditorLineNumbers in the language of msgs.
-func (msgs Messages) EditorLineNumbers() string { return msgs.text(textEditorLineNumbers) }
+// EditorHideLineNumbers is the package's EditorHideLineNumbers in the language of msgs.
+func (msgs Messages) EditorHideLineNumbers() string { return msgs.text(textEditorHideLineNumbers) }
 
-// EditorProblems says "Problems"
+// EditorShowWhitespace says "Show whitespace"
 // in the language the app shows under cx.
-func EditorProblems(cx *core.Scope) string { return For(cx).EditorProblems() }
+func EditorShowWhitespace(cx *core.Scope) string { return For(cx).EditorShowWhitespace() }
 
-// EditorProblems is the package's EditorProblems in the language of msgs.
-func (msgs Messages) EditorProblems() string { return msgs.text(textEditorProblems) }
+// EditorShowWhitespace is the package's EditorShowWhitespace in the language of msgs.
+func (msgs Messages) EditorShowWhitespace() string { return msgs.text(textEditorShowWhitespace) }
 
-// EditorFindAndReplace2 says "Find and Replace"
+// EditorReadOnly says "Read only"
 // in the language the app shows under cx.
-func EditorFindAndReplace2(cx *core.Scope) string { return For(cx).EditorFindAndReplace2() }
+func EditorReadOnly(cx *core.Scope) string { return For(cx).EditorReadOnly() }
 
-// EditorFindAndReplace2 is the package's EditorFindAndReplace2 in the language of msgs.
-func (msgs Messages) EditorFindAndReplace2() string { return msgs.text(textEditorFindAndReplace2) }
-
-// EditorKeys says "Keys"
-// in the language the app shows under cx.
-func EditorKeys(cx *core.Scope) string { return For(cx).EditorKeys() }
-
-// EditorKeys is the package's EditorKeys in the language of msgs.
-func (msgs Messages) EditorKeys() string { return msgs.text(textEditorKeys) }
-
-// EditorTypescriptLanguageServer says "TypeScript language server"
-// in the language the app shows under cx.
-func EditorTypescriptLanguageServer(cx *core.Scope) string {
-	return For(cx).EditorTypescriptLanguageServer()
-}
-
-// EditorTypescriptLanguageServer is the package's EditorTypescriptLanguageServer in the language of msgs.
-func (msgs Messages) EditorTypescriptLanguageServer() string {
-	return msgs.text(textEditorTypescriptLanguageServer)
-}
-
-// EditorResizeTheProblems says "Resize the problems"
-// in the language the app shows under cx.
-func EditorResizeTheProblems(cx *core.Scope) string { return For(cx).EditorResizeTheProblems() }
-
-// EditorResizeTheProblems is the package's EditorResizeTheProblems in the language of msgs.
-func (msgs Messages) EditorResizeTheProblems() string { return msgs.text(textEditorResizeTheProblems) }
+// EditorReadOnly is the package's EditorReadOnly in the language of msgs.
+func (msgs Messages) EditorReadOnly() string { return msgs.text(textEditorReadOnly) }
 
 // EditorOpenTheDescriptionOf says "Open the description of "
 // in the language the app shows under cx.
@@ -23569,20 +23309,6 @@ func EditorOpenTheDescriptionOf(cx *core.Scope) string { return For(cx).EditorOp
 func (msgs Messages) EditorOpenTheDescriptionOf() string {
 	return msgs.text(textEditorOpenTheDescriptionOf)
 }
-
-// EditorAnalyzing says "Analyzing…"
-// in the language the app shows under cx.
-func EditorAnalyzing(cx *core.Scope) string { return For(cx).EditorAnalyzing() }
-
-// EditorAnalyzing is the package's EditorAnalyzing in the language of msgs.
-func (msgs Messages) EditorAnalyzing() string { return msgs.text(textEditorAnalyzing) }
-
-// EditorToggleProblems says "Toggle problems"
-// in the language the app shows under cx.
-func EditorToggleProblems(cx *core.Scope) string { return For(cx).EditorToggleProblems() }
-
-// EditorToggleProblems is the package's EditorToggleProblems in the language of msgs.
-func (msgs Messages) EditorToggleProblems() string { return msgs.text(textEditorToggleProblems) }
 
 // EditorLnCol says "Ln {line, number}, Col {column, number}"
 // in the language the app shows under cx.
@@ -23734,28 +23460,6 @@ func (msgs Messages) EditorLinePressed(line int) string {
 			return "Line " + msgs.arg(i18n.FormatNumber("en", float64(line))) + " pressed"
 		case "zh-Hans":
 			return "点按了第 " + i18n.FormatNumber("zh-Hans", float64(line)) + " 行"
-		}
-	}
-}
-
-// EditorProblemsCount says "Problems {count, number}"
-// in the language the app shows under cx.
-func EditorProblemsCount(cx *core.Scope, count int) string { return For(cx).EditorProblemsCount(count) }
-
-// EditorProblemsCount is the package's EditorProblemsCount in the language of msgs.
-func (msgs Messages) EditorProblemsCount(count int) string {
-	if i18n.IsPseudo(msgs.lang) {
-		return i18n.Pseudo(msgs.lang, Messages{lang: Source, mark: true}.EditorProblemsCount(count))
-	}
-	for lang := msgs.lang; ; lang = i18n.Parent(lang) {
-		if f := supplied[lang].EditorProblemsCount; f != nil {
-			return f(count)
-		}
-		switch lang {
-		case "", "en":
-			return "Problems " + msgs.arg(i18n.FormatNumber("en", float64(count)))
-		case "zh-Hans":
-			return "问题 " + i18n.FormatNumber("zh-Hans", float64(count))
 		}
 	}
 }

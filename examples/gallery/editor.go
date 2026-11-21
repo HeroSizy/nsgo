@@ -2,13 +2,11 @@ package main
 
 import (
 	"fmt"
-	"github.com/nsgo-dev/nsgo/icons/lucide"
 	"reflect"
 	"slices"
 	"time"
 
 	"github.com/nsgo-dev/nsgo/base"
-	"github.com/nsgo-dev/nsgo/base/dock"
 	"github.com/nsgo-dev/nsgo/base/editor"
 	"github.com/nsgo-dev/nsgo/base/textview"
 	"github.com/nsgo-dev/nsgo/base/textview/highlight"
@@ -17,6 +15,7 @@ import (
 
 	"github.com/nsgo-dev/nsgo/examples/gallery/locales"
 	"github.com/nsgo-dev/nsgo/ui"
+	uieditor "github.com/nsgo-dev/nsgo/ui/editor"
 )
 
 // base/editor's Editor draws its text, gutter, carets and matches itself
@@ -41,7 +40,7 @@ func at(line, start, end int) editor.Range {
 	return editor.Range{Start: editor.Position{Line: line, Column: start}, End: editor.Position{Line: line, Column: end}}
 }
 
-// editorLanguages are the samples in the language menu's order.
+// editorLanguages are the samples in the Language select's order.
 var editorLanguages = []string{"typescript", "rust", "python", "json"}
 
 var editorSamples = map[string]editorSample{
@@ -122,54 +121,6 @@ const lspSample = "/** An order of the shop. */\ninterface Order {\n  id: number
 	"const order: Order = { id: 7, items: [{ name: \"Tea\", price: 4.5, quantity: 2 }] };\nconst label = describe(order);\n" +
 	"const receipt = new Receipt();\nreceipt.add(label);\nreceipt.prnt();\n"
 
-// editorStyles is the gallery's editor look, base having none, for its
-// StylesFunc.
-func editorStyles(cx *core.Scope) func() editor.Styles {
-	return ui.Themed(cx, func() editor.Styles { return editorParts(cx) })
-}
-
-// editorParts are the editor's styles, read where ui.ColorsOf's colors are.
-func editorParts(cx *core.Scope) editor.Styles {
-	colors := ui.ColorsOf(cx).Now()
-	fin := ui.FinOf(cx)
-	popup := fin.Menu().Over(core.Style{CornerRadius: 8, BorderWidth: 1, BorderColor: colors.Border, Padding: core.All(4)})
-	wavy := func(c core.Color) core.Style {
-		return core.Style{TextDecoration: core.TextDecorationUnderline, TextDecorationStyle: core.DecorationWavy, TextDecorationColor: c}
-	}
-	return editor.Styles{
-		Gutter:                 core.Style{Color: colors.Faint, FontSize: 12},
-		ActiveLineNumber:       core.Style{Color: colors.Text},
-		FoldMarker:             core.Style{Color: colors.Faint},
-		Content:                core.Style{Color: colors.Text},
-		ActiveLine:             core.Style{Background: ui.Alpha(colors.Text, 0.04)},
-		Selection:              core.Style{Background: ui.Alpha(colors.Accent, 0.22)},
-		Caret:                  core.Style{Background: colors.Accent, Width: core.Pt(2)},
-		SearchMatch:            core.Style{Background: core.RGBA(0xfbbf24, 0.25)},
-		CurrentSearchMatch:     core.Style{Background: core.RGBA(0xfbbf24, 0.55)},
-		MatchingBracket:        core.Style{BorderWidth: 1, BorderColor: ui.Alpha(colors.Muted, 0.6)},
-		FoldPlaceholder:        core.Style{Color: colors.Faint},
-		Placeholder:            core.Style{Color: colors.Faint},
-		DiagnosticError:        wavy(colors.Danger),
-		DiagnosticWarning:      wavy(colors.Warn),
-		DiagnosticInfo:         wavy(colors.Info),
-		DiagnosticHint:         wavy(colors.Muted),
-		UnnecessaryText:        core.Style{Color: colors.Faint},
-		DeprecatedText:         core.Style{TextDecoration: core.TextDecorationLineThrough},
-		SelectionHandle:        core.Style{CornerRadius: 5, Background: colors.Accent},
-		CompletionMenu:         popup,
-		CompletionItem:         core.Style{Padding: core.Symmetric(0, 8), Gap: 6, CornerRadius: 5, Color: colors.Text},
-		SelectedCompletionItem: core.Style{Background: ui.Alpha(colors.Accent, 0.16)},
-		CompletionMatch:        core.Style{FontWeight: ui.Semibold, Color: colors.Accent},
-		CompletionDetail:       core.Style{Color: colors.Muted, FontSize: 12},
-		CompletionKind:         core.Style{Color: colors.Faint, FontSize: 11, Width: core.Pt(30)},
-		CompletionDocumentation: fin.Menu().Over(core.Style{CornerRadius: 8, BorderWidth: 1, BorderColor: colors.Border,
-			Padding: core.Symmetric(6, 8), Color: colors.Text, FontSize: 12}),
-		DefinitionLink:   core.Style{Background: colors.Accent},
-		IndentGuide:      core.Style{Background: colors.Border},
-		InlineCompletion: core.Style{Color: colors.Faint, Background: colors.Surface},
-	}
-}
-
 // editorHover is what the hover card shows.
 type editorHover struct {
 	anchor      core.Bounds
@@ -217,24 +168,20 @@ func (t *pageTimer) cancel() {
 
 func sameRange(a, b editor.Range) bool { return a == b }
 
-// editorDemo is base/editor's Editor, as NSH's gallery shows it: a sample
-// file per language in a DockArea, its problems in a bottom dock (resized
-// and hidden; a sheet at phone width) and a status line under them; the
-// language, soft wrap and line numbers chosen from menus; a find bar of
-// the app's own inputs, opened with Mod+F and closed with Escape; a
-// context menu of editing commands. On the TypeScript sample a simulated
-// language server: diagnostics after each pause in typing, hover cards
-// with the symbol's signature and docs, go to definition (Mod-hover
-// underlines, Mod-click and F12 go), quick fixes and refactorings
-// (Mod+.), the colors of hex literals, completion (as you type, after a
-// dot, Ctrl+Space) and inline completion (Tab).
+// editorDemo is ui/editor's Editor beside its options: a sample file per
+// language, the find and replace of its Search, the commands of its Ref
+// and what its events report; a context menu of editing commands. On the
+// TypeScript sample a simulated language server: diagnostics after each
+// pause in typing, hover cards with the symbol's signature and docs, go to
+// definition (Mod-hover underlines, Mod-click and F12 go), quick fixes and
+// refactorings (Mod+.), the colors of hex literals, completion (as you
+// type, after a dot, Ctrl+Space) and inline completion (Tab).
 func editorDemo(cx *core.Scope) core.Node {
 	tr := locales.For(cx)
 	colors := ui.ColorsOf(cx)
-	pointer := core.Untracked(cx, cx.Env().Desktop)
-	apple := core.Untracked(cx, cx.Env().AppleKeys)
 	language := core.NewSignal(cx, "typescript")
-	softWrap, lineNumbers, finding := core.NewSignal(cx, false), core.NewSignal(cx, true), core.NewSignal(cx, false)
+	softWrap, noLineNumbers := core.NewSignal(cx, false), core.NewSignal(cx, false)
+	whitespaces, readOnly := core.NewSignal(cx, false), core.NewSignal(cx, false)
 	query, replacement := core.NewSignal(cx, ""), core.NewSignal(cx, "")
 	caseSensitive, wholeWord, regex := core.NewSignal(cx, false), core.NewSignal(cx, false), core.NewSignal(cx, false)
 	selections := core.NewSignalFunc(cx, []editor.Selection(nil), slices.Equal)
@@ -243,10 +190,7 @@ func editorDemo(cx *core.Scope) core.Node {
 	// Each sample's text as last edited, so switching back finds it as it
 	// was.
 	texts := map[string]string{}
-	ref, area, toolbar := &editor.Ref{}, &dock.AreaRef{}, new(core.Ref)
-	// Whether the problems' dock shows: open in the full presentation,
-	// none at first at compact width.
-	problemsShown := core.NewSignal(cx, core.Untracked(cx, cx.Env().Window).Width >= 600)
+	ref, findField := &editor.Ref{}, &core.Ref{}
 	server := &languageServer{}
 	server.change(lspSample)
 	unequal := func(a, b lspAnalysis) bool { return false }
@@ -463,431 +407,143 @@ func editorDemo(cx *core.Scope) core.Node {
 		}
 		return nil
 	}
-	mod := "Ctrl"
-	if apple {
-		mod = "⌘"
-	}
-	key := func(k string) string {
-		return core.KeyLabel(k, core.Untracked(cx, cx.Env().OS), apple)
-	}
-	// The keys, as the options menu lists them.
-	tips := func() []string {
-		if !typescript() {
-			last := tr.EditorLongPressToSelect()
-			if pointer {
-				last = tr.EditorRightClickForCommands()
-			}
-			return []string{key("mod+.") + tr.EditorCodeActions(), last}
-		}
-		out := []string{key("ctrl+space") + tr.EditorCompletionsAlsoAsYouType(), tr.EditorTabTakesTheGraySuggestion()}
-		if pointer {
-			out = append(out, tr.EditorHoverForDocsAndProblems(), tr.EditorHold()+mod+tr.EditorOverANameToUnderline())
-		}
-		return append(out, key("f12")+tr.EditorOr()+mod+tr.EditorClickGoToDefinition(), key("mod+.")+tr.EditorCodeActions())
-	}
-
-	// The find bar opens with Mod+F (the selection, when there is one,
-	// becomes its query) and closes with Escape or its close button,
-	// giving the focus back to the text.
-	openFind := func() {
+	// Mod+F puts the selection, when there is one, in the find field and
+	// focuses it.
+	cx.OnKey("mod+f", func() {
 		if sels := selections.GetUntracked(); len(sels) > 0 && sels[len(sels)-1].Anchor != sels[len(sels)-1].Head {
 			ref.Run(editor.FindWithSelection)
 		}
-		finding.Set(true)
-	}
-	closeFind := func() {
-		finding.Set(false)
-		query.Set("")
-		ref.Focus()
-	}
-	cx.OnKey("mod+f", openFind)
-
-	tip := func(label string) core.Node {
-		return core.View{StyleFunc: func() core.Style {
-			return core.Style{CornerRadius: 6, BorderWidth: 1, BorderColor: colors.Border(), Background: colors.Raised(), Padding: core.Symmetric(4, 8)}
-		}, Children: []core.Node{ui.Text(label, 12, ui.Regular, colors.Text)}}
-	}
-	// textTool is a small text button of the find bar, lit while what it
-	// toggles is on.
-	textTool := func(label, name string, on func() bool, onPress func()) core.Node {
-		return core.View{Tooltip: tip(label), Children: []core.Node{base.Button{Label: label, Selected: on, OnPress: func(core.PressEvent) { onPress() },
-			StyleFunc: func() core.Style {
-				s := core.Style{Height: core.Pt(28), MinWidth: core.Pt(28), AlignItems: core.AlignCenter, JustifyContent: core.JustifyCenter,
-					CornerRadius: 6, Padding: core.Symmetric(0, 6), Hover: &core.Style{Background: ui.Alpha(colors.Text(), 0.1)},
-					Active: &core.Style{Opacity: core.Alpha(0.7)}}
-				if on() {
-					s.Background = colors.AccentFill()
-				}
-				return s
-			},
-			Children: []core.Node{core.Text{Content: name, Style: core.Style{FontFamily: ui.Mono, FontSize: 11, FontWeight: ui.Semibold},
-				StyleFunc: func() core.Style {
-					if on() {
-						return core.Style{Color: colors.OnAccent()}
-					}
-					return core.Style{Color: colors.Text()}
-				}}}}}}
-	}
-	// iconTool is an icon button, its label for screen readers and its
-	// tooltip, lit while what it toggles is on.
-	iconTool := func(label string, name func() *core.SVG, on func() bool, onPress func(), small bool) core.Node {
-		if on == nil {
-			on = func() bool { return false }
-		}
-		size, glyph := core.Points(28), core.Points(16)
-		if small {
-			size, glyph = 20, 13
-		}
-		return core.View{Tooltip: tip(label), Children: []core.Node{base.Button{Label: label, Selected: on, OnPress: func(core.PressEvent) { onPress() },
-			StyleFunc: func() core.Style {
-				s := core.Style{Width: core.Pt(size), Height: core.Pt(size), AlignItems: core.AlignCenter, JustifyContent: core.JustifyCenter,
-					CornerRadius: 6, Hover: &core.Style{Background: ui.Alpha(colors.Text(), 0.1)}, Active: &core.Style{Opacity: core.Alpha(0.7)}}
-				if on() {
-					s.Background = ui.Alpha(colors.Text(), 0.15)
-				}
-				return s
-			},
-			Children: []core.Node{ui.Icon(name, glyph, func() core.Color {
-				if on() {
-					return colors.Text()
-				}
-				return colors.Muted()
-			})}}}}
-	}
-	field := func(label string, value *core.Signal[string], submit func(), autoFocus bool) core.Node {
-		return core.Input{Label: label, Placeholder: label, Value: value.Get, OnChange: value.Set, OnSubmit: func(string) { submit() },
-			AutoFocus: autoFocus, AutoCapitalize: core.AutoCapitalizeNone, NoAutoCorrect: true,
-			StyleFunc: func() core.Style {
-				return core.Style{Height: core.Pt(28), MinWidth: core.Pt(100), FlexGrow: 1, FlexShrink: 1, CornerRadius: 6, BorderWidth: 1,
-					BorderColor: colors.Border(), Background: colors.Surface(), Padding: core.Symmetric(0, 8), FontSize: 12, Color: colors.Text(),
-					PlaceholderColor: colors.Muted(), Focus: &core.Style{BorderColor: colors.Accent()}}
-			}}
-	}
-	// findBar is the find bar, while it is open: an overlay under the
-	// toolbar's end, over the editor's first lines; Escape closes it.
-	findBar := core.Show{When: finding.Get, Then: func(cx *core.Scope) core.Node {
-		tr := locales.For(cx)
-		env := cx.Env()
-		row := core.Style{Direction: core.Row, AlignItems: core.AlignCenter, Gap: 2}
-		return core.Overlay{Anchor: toolbar, Placement: core.PlaceBottom, Align: core.AlignEnd, Offset: 4, Margin: 8, OnCancel: closeFind,
-			Children: []core.Node{core.View{TestID: "find-bar", StyleFunc: func() core.Style {
-				return ui.FinOf(cx).Raised().Over(core.Style{Width: core.Pt(min(440, env.Window().Width-16)), Gap: 4, CornerRadius: 8, BorderWidth: 1,
-					BorderColor: colors.Border(), Background: colors.Raised(), Padding: core.All(4)})
-			}, Children: []core.Node{
-				core.View{Style: row, Children: []core.Node{
-					field(tr.EditorFind(), query, func() { ref.Run(editor.FindNext) }, true),
-					core.Text{ContentFunc: matches, MaxLines: 1, Style: core.Style{Padding: core.Symmetric(0, 4), FontFamily: ui.Mono, FontSize: 11},
-						StyleFunc: ui.Colored(colors.Muted)},
-					textTool(tr.EditorMatchCase(), "Aa", caseSensitive.Get, func() { toggled(caseSensitive) }),
-					textTool(tr.EditorWholeWord(), "W", wholeWord.Get, func() { toggled(wholeWord) }),
-					textTool(tr.EditorRegularExpression(), ".*", regex.Get, func() { toggled(regex) }),
-					iconTool(tr.EditorPreviousMatch(), lucide.ArrowUp, nil, func() { ref.Run(editor.FindPrevious) }, false),
-					iconTool(tr.EditorNextMatch(), lucide.ArrowDown, nil, func() { ref.Run(editor.FindNext) }, false),
-					iconTool(tr.EditorCloseTheFindBar(), lucide.X, nil, closeFind, false),
-				}},
-				core.View{Style: row, Children: []core.Node{
-					field(tr.EditorReplace(), replacement, func() { ref.Replace(replacement.GetUntracked()) }, false),
-					iconTool(tr.EditorReplace(), lucide.Replace, nil, func() { ref.Replace(replacement.GetUntracked()) }, false),
-					iconTool(tr.EditorReplaceAll(), lucide.ReplaceAll, nil, func() { last.Set(tr.EditorReplaced(ref.ReplaceAll(replacement.GetUntracked()))) }, false),
-				}},
-			}}}}
-	}}
+		findField.Focus()
+	})
 
 	// source is the editor of the sample shown: switching remounts it, so
 	// each keeps its undo history out of the others'.
-	source := func(cx *core.Scope) core.Node {
-		return core.View{StyleFunc: func() core.Style { return core.Style{FlexGrow: 1, Background: colors.Surface()} }, Children: []core.Node{
-			core.Dynamic(func(cx *core.Scope) core.Node {
-				tr := locales.For(cx)
-				colors := ui.ColorsOf(cx)
-				lang := language.Get()
-				lsp := lang == "typescript"
-				initial, ok := texts[lang]
-				if !ok {
-					initial = editorSamples[lang].text
-				}
-				e := editor.Editor{Ref: ref, TestID: "editor", Label: lang + tr.EditorSource(), DefaultValue: initial, Language: lang,
-					SoftWrap: softWrap.Get(), NoLineNumbers: !lineNumbers.Get(),
-					Diagnostics: diagnostics, Decorations: decorations,
-					Search: func() editor.Search {
-						q := ""
-						if finding.Get() {
-							q = query.Get()
-						}
-						return editor.Search{Query: q, CaseSensitive: caseSensitive.Get(), WholeWord: wholeWord.Get(), Regex: regex.Get()}
-					},
-					CompletionTriggerCharacters: []string{"."}, InlineCompletionDelay: 150 * time.Millisecond,
-					OnChange: func(v string) {
-						texts[lang] = v
-						if lsp {
-							changed(v)
-						}
-					},
-					OnSelectionChange: selections.Set,
-					OnSearchChange:    result.Set,
-					OnFindWithSelection: func(v string) {
-						query.Set(v)
-						finding.Set(true)
-					},
-					OnLineNumberPress: func(line int) { last.Set(tr.EditorLinePressed(line + 1)) },
-					OnContextMenu:     func(e editor.ContextMenuEvent) { contextMenu(e.Position, e.At) },
-					OnHover: func(e editor.HoverEvent) {
-						closing.cancel()
-						hoverAsked++
-						asked := hoverAsked
-						show := func(h *lspHover) {
-							if asked != hoverAsked {
-								return
-							}
-							if h == nil && len(e.Diagnostics) == 0 {
-								hover.Set(nil)
-								return
-							}
-							card := &editorHover{anchor: e.PageBounds, diagnostics: e.Diagnostics}
-							if h != nil {
-								card.markdown = h.markdown
-							}
-							hover.Set(card)
-						}
-						if !lsp {
-							show(nil)
-							return
-						}
-						lspAsk(cx, server, 25*time.Millisecond, func(m *lspModel) *lspHover { return m.hover(e.Position) }, show)
-					},
-					OnHoverEnd: func() {
-						hoverAsked++
-						closeSoon()
-					},
-					OnDefinitionRequest: func(r editor.DefinitionRequest) {
-						if !lsp {
-							if r.Trigger != editor.DefinitionHover {
-								showDefinition(nil)
-							}
-							return
-						}
-						definition(r.Position, func(t *lspTarget) {
-							// Mod held over a name: underlined when it has a
-							// definition (the editor drops an answer to an
-							// older request).
-							if r.Trigger == editor.DefinitionHover {
-								if t != nil {
-									ref.PresentDefinitionLink(r.ID, r.Range)
-								}
-								return
-							}
-							showDefinition(t)
-						})
-					},
-					OnCodeActionRequest: func(req editor.CodeActionRequest) {
-						rng := req.Range
-						box, ok := ref.CaretBounds()
-						if !ok {
-							return
-						}
-						anchor := core.Point{X: box.PageBounds.Origin.X, Y: box.PageBounds.Origin.Y + box.PageBounds.Size.Height}
-						actions := codeActions(rng, problems.GetUntracked())
-						later(cx, 20*time.Millisecond, func() {
-							if desktop.IsAvailable(cx) {
-								desktop.PopupMenu(cx, menuItems(actions), anchor, nil)
-							} else {
-								quickFixes.Set(&quickFixMenu{anchor: anchor, actions: actions})
-							}
-						})
-					},
-					OnCompletionAccept: func(e editor.CompletionAcceptEvent) { last.Set(tr.EditorCompleted() + e.Item.Label) },
-					StylesFunc:         editorStyles(cx),
-					StyleFunc:          func() core.Style { return core.Style{FlexGrow: 1, Color: colors.Text()} },
-				}
-				if lsp {
-					e.Completion = true
-					e.OnCompletionRequest = func(r editor.CompletionRequest) {
-						var latency time.Duration
-						lspAsk(cx, server, 0, func(m *lspModel) []editor.CompletionItem {
-							items, l := m.completion(r)
-							latency = l
-							return items
-						}, func(items []editor.CompletionItem) {
-							later(cx, latency, func() { ref.PresentCompletions(r.ID, items, false) })
-						})
+	source := core.View{StyleFunc: func() core.Style {
+		return ui.FinOf(cx).Card().Over(core.Style{FlexGrow: 1, FlexShrink: 1, MinHeight: core.Pt(0), CornerRadius: ui.RadiusInset,
+			BorderWidth: 1, BorderColor: colors.Border(), Background: colors.Surface(), Overflow: core.Hidden})
+	}, Children: []core.Node{
+		core.Dynamic(func(cx *core.Scope) core.Node {
+			tr := locales.For(cx)
+			colors := ui.ColorsOf(cx)
+			lang := language.Get()
+			lsp := lang == "typescript"
+			initial, ok := texts[lang]
+			if !ok {
+				initial = editorSamples[lang].text
+			}
+			e := uieditor.Editor{Ref: ref, TestID: "editor", Label: lang + tr.EditorSource(), DefaultValue: initial, Language: lang,
+				SoftWrap: softWrap.Get(), NoLineNumbers: noLineNumbers.Get(), ShowWhitespaces: whitespaces.Get(), ReadOnly: readOnly.Get(),
+				Diagnostics: diagnostics, Decorations: decorations,
+				Search: func() editor.Search {
+					return editor.Search{Query: query.Get(), CaseSensitive: caseSensitive.Get(), WholeWord: wholeWord.Get(), Regex: regex.Get()}
+				},
+				CompletionTriggerCharacters: []string{"."}, InlineCompletionDelay: 150 * time.Millisecond,
+				OnChange: func(v string) {
+					texts[lang] = v
+					if lsp {
+						changed(v)
 					}
-					e.OnInlineCompletionRequest = func(r editor.InlineCompletionRequest) {
-						lspAsk(cx, server, 50*time.Millisecond, func(m *lspModel) string { return m.inline(r.Position) }, func(s string) {
-							if s != "" {
-								ref.PresentInlineCompletion(r.ID, s)
-							}
-						})
+				},
+				OnSelectionChange:   selections.Set,
+				OnSearchChange:      result.Set,
+				OnFindWithSelection: query.Set,
+				OnLineNumberPress:   func(line int) { last.Set(tr.EditorLinePressed(line + 1)) },
+				OnContextMenu:       func(e editor.ContextMenuEvent) { contextMenu(e.Position, e.At) },
+				OnHover: func(e editor.HoverEvent) {
+					closing.cancel()
+					hoverAsked++
+					asked := hoverAsked
+					show := func(h *lspHover) {
+						if asked != hoverAsked {
+							return
+						}
+						if h == nil && len(e.Diagnostics) == 0 {
+							hover.Set(nil)
+							return
+						}
+						card := &editorHover{anchor: e.PageBounds, diagnostics: e.Diagnostics}
+						if h != nil {
+							card.markdown = h.markdown
+						}
+						hover.Set(card)
 					}
+					if !lsp {
+						show(nil)
+						return
+					}
+					lspAsk(cx, server, 25*time.Millisecond, func(m *lspModel) *lspHover { return m.hover(e.Position) }, show)
+				},
+				OnHoverEnd: func() {
+					hoverAsked++
+					closeSoon()
+				},
+				OnDefinitionRequest: func(r editor.DefinitionRequest) {
+					if !lsp {
+						if r.Trigger != editor.DefinitionHover {
+							showDefinition(nil)
+						}
+						return
+					}
+					definition(r.Position, func(t *lspTarget) {
+						// Mod held over a name: underlined when it has a
+						// definition (the editor drops an answer to an
+						// older request).
+						if r.Trigger == editor.DefinitionHover {
+							if t != nil {
+								ref.PresentDefinitionLink(r.ID, r.Range)
+							}
+							return
+						}
+						showDefinition(t)
+					})
+				},
+				OnCodeActionRequest: func(req editor.CodeActionRequest) {
+					rng := req.Range
+					box, ok := ref.CaretBounds()
+					if !ok {
+						return
+					}
+					anchor := core.Point{X: box.PageBounds.Origin.X, Y: box.PageBounds.Origin.Y + box.PageBounds.Size.Height}
+					actions := codeActions(rng, problems.GetUntracked())
+					later(cx, 20*time.Millisecond, func() {
+						if desktop.IsAvailable(cx) {
+							desktop.PopupMenu(cx, menuItems(actions), anchor, nil)
+						} else {
+							quickFixes.Set(&quickFixMenu{anchor: anchor, actions: actions})
+						}
+					})
+				},
+				OnCompletionAccept: func(e editor.CompletionAcceptEvent) { last.Set(tr.EditorCompleted() + e.Item.Label) },
+				StyleFunc:          func() core.Style { return core.Style{FlexGrow: 1, Color: colors.Text()} },
+			}
+			if lsp {
+				e.Completion = true
+				e.OnCompletionRequest = func(r editor.CompletionRequest) {
+					var latency time.Duration
+					lspAsk(cx, server, 0, func(m *lspModel) []editor.CompletionItem {
+						items, l := m.completion(r)
+						latency = l
+						return items
+					}, func(items []editor.CompletionItem) {
+						later(cx, latency, func() { ref.PresentCompletions(r.ID, items, false) })
+					})
 				}
-				return e
-			}),
-		}}
-	}
+				e.OnInlineCompletionRequest = func(r editor.InlineCompletionRequest) {
+					lspAsk(cx, server, 50*time.Millisecond, func(m *lspModel) string { return m.inline(r.Position) }, func(s string) {
+						if s != "" {
+							ref.PresentInlineCompletion(r.ID, s)
+						}
+					})
+				}
+			}
+			return e
+		}),
+	}}
 
 	dot := func(s editor.Severity) core.Node {
 		c := [...]func() core.Color{colors.Danger, colors.Warn, colors.Info, colors.Muted}[min(s, editor.SeverityHint)]
 		return core.View{Style: core.Style{Margin: core.Edges{Top: 5}, Width: core.Pt(8), Height: core.Pt(8), CornerRadius: 4}, StyleFunc: ui.Filled(c)}
 	}
-	// problemsList is the problems of the sample shown, a list of what is
-	// in view: pressing one puts the caret on it.
-	problemsList := func(cx *core.Scope) core.Node {
-		tr := locales.For(cx)
-		return core.Show{When: func() bool { return len(problems.Get()) > 0 },
-			Else: func(*core.Scope) core.Node {
-				return core.Text{Content: tr.EditorNoProblems(), Style: core.Style{Padding: core.Symmetric(8, 12), FontSize: 12}, StyleFunc: ui.Colored(colors.Muted)}
-			},
-			Then: func(cx *core.Scope) core.Node {
-				return core.List{Style: core.Style{FlexGrow: 1, Padding: core.Symmetric(4, 0)}, EstimatedSize: 24,
-					Count: func() int { return len(problems.Get()) },
-					Row: func(cx *core.Scope, row core.ListRow) core.Node {
-						p := func() lspProblem {
-							all := problems.Get()
-							if i := row.Index(); i < len(all) {
-								return all[i]
-							}
-							return lspProblem{}
-						}
-						return base.Button{
-							OnPress: func(core.PressEvent) {
-								start := p().diagnostic.Range.Start
-								ref.SetSelections([]editor.Selection{{Anchor: start, Head: start}})
-								ref.RevealPosition(start, true)
-								ref.Focus()
-							},
-							StyleFunc: func() core.Style {
-								return core.Style{Direction: core.Row, Gap: 8, Padding: core.Symmetric(4, 12)}
-							},
-							Children: []core.Node{
-								core.Dynamic(func(*core.Scope) core.Node { return dot(p().diagnostic.Severity) }),
-								core.Text{ContentFunc: func() string { return p().diagnostic.Message }, MaxLines: 1,
-									Style: core.Style{FlexGrow: 1, FlexShrink: 1, FontSize: 12}, StyleFunc: ui.Colored(colors.Text)},
-								core.Text{ContentFunc: func() string {
-									s := p().diagnostic.Range.Start
-									return fmt.Sprintf("%d:%d", s.Line+1, s.Column+1)
-								}, Style: core.Style{FontFamily: ui.Mono, FontSize: 11, FontVariant: core.FontTabularNums}, StyleFunc: ui.Colored(colors.Muted)},
-							}}
-					}}
-			}}
-	}
-
-	menuTrigger := func(label string, children ...core.Node) core.Node {
-		return core.View{Label: label, Tooltip: tip(label), StyleFunc: func() core.Style {
-			return core.Style{Height: core.Pt(28), MinWidth: core.Pt(28), Direction: core.Row, AlignItems: core.AlignCenter, JustifyContent: core.JustifyCenter,
-				Gap: 6, Padding: core.Symmetric(0, 6), CornerRadius: 6, Hover: &core.Style{Background: ui.Alpha(colors.Text(), 0.1)},
-				Active: &core.Style{Opacity: core.Alpha(0.7)}}
-		}, Children: children}
-	}
-	toolbarView := core.View{Ref: toolbar, StyleFunc: func() core.Style {
-		return core.Style{Height: core.Pt(40), Direction: core.Row, AlignItems: core.AlignCenter, Gap: 2, Padding: core.Symmetric(0, 6),
-			Borders: core.Edges{Bottom: 1}, BorderColors: core.EdgeColors{Bottom: colors.Border()}}
-	}, Children: []core.Node{
-		ui.Menu{Label: tr.EditorLanguage(),
-			Face: menuTrigger(tr.EditorLanguage(), ui.Icon(lucide.Code, 16, colors.Muted),
-				core.Text{ContentFunc: func() string { return editorSamples[language.Get()].label }, Style: core.Style{FontSize: 12, FontWeight: ui.Medium},
-					StyleFunc: ui.Colored(colors.Text)}),
-			Children: func() []core.Node {
-				var out []core.Node
-				for _, lang := range editorLanguages {
-					out = append(out, core.Func(func(cx *core.Scope) core.Node {
-						return ui.MenuItem{Text: editorSamples[lang].label, Checked: func() bool { return language.Get() == lang }, OnSelect: func() {
-							hover.Set(nil)
-							language.Set(lang)
-						}}
-					}))
-				}
-				return out
-			}()},
-		ui.Spacer{},
-		iconTool(tr.EditorFindAndReplace(), lucide.Search, finding.Get, func() {
-			if finding.GetUntracked() {
-				closeFind()
-			} else {
-				openFind()
-			}
-		}, false),
-		ui.Menu{Align: core.AlignEnd, Label: tr.EditorEditorOptions(),
-			Face: menuTrigger(tr.EditorEditorOptions(), ui.Icon(lucide.SlidersHorizontal, 16, colors.Muted)),
-			Children: []core.Node{
-				core.Func(func(cx *core.Scope) core.Node {
-					tr := locales.For(cx)
-					return ui.MenuItem{Text: tr.EditorSoftWrap(), Checked: softWrap.Get, NoCloseOnSelect: true, OnSelect: func() { toggled(softWrap) }}
-				}),
-				core.Func(func(cx *core.Scope) core.Node {
-					tr := locales.For(cx)
-					return ui.MenuItem{Text: tr.EditorLineNumbers(), Checked: lineNumbers.Get, NoCloseOnSelect: true, OnSelect: func() { toggled(lineNumbers) }}
-				}),
-				core.Func(func(cx *core.Scope) core.Node {
-					tr := locales.For(cx)
-					return ui.MenuItem{Text: tr.EditorProblems(), Checked: problemsShown.Get, OnSelect: func() { area.ToggleDock(dock.Bottom) }}
-				}),
-				core.Func(func(cx *core.Scope) core.Node {
-					tr := locales.For(cx)
-					return ui.MenuItem{Text: tr.EditorFindAndReplace2(), Shortcut: "mod+f", OnSelect: openFind}
-				}),
-				ui.MenuSeparator{},
-				core.Dynamic(func(cx *core.Scope) core.Node {
-					tr := locales.For(cx)
-					title := tr.EditorKeys()
-					if typescript() {
-						title = tr.EditorTypescriptLanguageServer()
-					}
-					nodes := []core.Node{ui.MenuLabel{Text: title}}
-					for _, t := range tips() {
-						nodes = append(nodes, core.Text{Content: t, Style: core.Style{Padding: core.Symmetric(2, 8), FontSize: 12}, StyleFunc: ui.Colored(colors.Muted)})
-					}
-					return core.Group(nodes)
-				}),
-			}},
-	}}
-
-	docks := dock.Area{Ref: area, TestID: "editor-dock", Style: core.Style{FlexGrow: 1}, Compact: narrowDock(cx),
-		DefaultLayout: dock.Layout{Center: dock.Tabs("editor"), Bottom: &dock.Region{Root: dock.Tabs("problems"), Size: 120}},
-		OnDockOpenChange: func(p dock.Placement, open bool) {
-			if p == dock.Bottom {
-				problemsShown.Set(open)
-			}
-		},
-		GroupStyleFunc: func() core.Style { return core.Style{FlexGrow: 1, Background: colors.Surface()} },
-		TabBarStyleFunc: func() core.Style {
-			return core.Style{Direction: core.Row, Borders: core.Edges{Bottom: 1}, BorderColors: core.EdgeColors{Bottom: colors.Border()}}
-		},
-		ContentStyle: core.Style{FlexGrow: 1},
-		HandleLabel:  tr.EditorResizeTheProblems(), HandleStyleFunc: ui.HandleLine(cx),
-		HandleThumbStyle: ui.HandleThumb(cx), HandleThumbStyleFunc: ui.HandleThumbColor(cx),
-		DockStyleFunc: func() core.Style { return core.Style{Background: colors.Surface()} },
-		SheetStyleFunc: func() core.Style {
-			return core.Style{Height: core.Pt(288), CornerRadii: core.Corners{TopLeft: 16, TopRight: 16}, Borders: core.Edges{Top: 1},
-				BorderColors: core.EdgeColors{Top: colors.Border()}, Background: colors.Surface()}
-		},
-		BackdropStyle: core.Style{Background: ui.Black(0.4)},
-		RenderTab: func(cx *core.Scope, tab dock.Tab) core.Node {
-			return core.View{Style: core.Style{Height: core.Pt(28), Direction: core.Row, AlignItems: core.AlignCenter, Gap: 8, Padding: core.Symmetric(0, 12)},
-				Children: []core.Node{
-					core.Text{MaxLines: 1, ContentFunc: func() string {
-						if tab.Key == "editor" {
-							return editorSamples[language.Get()].file
-						}
-						return tr.EditorProblemsCount(len(problems.Get()))
-					}, Style: core.Style{FontSize: 12, FontWeight: ui.Medium}, StyleFunc: func() core.Style {
-						if tab.Selected() {
-							return core.Style{Color: colors.Text()}
-						}
-						return core.Style{Color: colors.Muted()}
-					}},
-					core.Show{When: tab.Selected, Then: func(*core.Scope) core.Node {
-						return core.View{PointerEvents: core.PointerEventsNone, Style: core.Style{Position: core.Absolute, Bottom: core.Pt(0), Left: core.Pt(12),
-							Right: core.Pt(12), Height: core.Pt(2), CornerRadius: 1}, StyleFunc: ui.Filled(colors.Accent)}
-					}},
-				}}
-		},
-		RenderPanel: func(cx *core.Scope, key string) core.Node {
-			if key == "editor" {
-				return source(cx)
-			}
-			return problemsList(cx)
-		},
-	}
-
 	// hoverCard is the server's answer and the problems at the word, over
 	// it: the problems with their sources, codes (a link to the rule's
 	// page) and fixes, then the docs.
@@ -980,38 +636,67 @@ func editorDemo(cx *core.Scope) core.Node {
 			}, Children: rows}}}
 	})
 
-	status := func(fn func() string, c func() core.Color, grow bool) core.Node {
-		t := core.Text{ContentFunc: fn, MaxLines: 1, Style: core.Style{FontFamily: ui.Mono, FontSize: 11, FontVariant: core.FontTabularNums}, StyleFunc: ui.Colored(c)}
-		if grow {
-			t.Style.MinWidth, t.Style.FlexShrink = core.Pt(0), 1
-		}
-		return t
+	small := func(label string, onPress func()) core.Node {
+		return ui.Button{Text: label, Variant: ui.ButtonSecondary, Size: ui.SizeSmall, OnPress: onPress}
 	}
-	statusLine := core.View{StyleFunc: func() core.Style {
-		return core.Style{Height: core.Pt(24), Direction: core.Row, AlignItems: core.AlignCenter, Gap: 12, Overflow: core.Hidden,
-			Padding: core.Edges{Left: 10, Right: 4}, Borders: core.Edges{Top: 1}, BorderColors: core.EdgeColors{Top: colors.Border()}}
-	}, Children: []core.Node{
-		status(caret, colors.Text, false),
-		status(func() string { return tr.EditorErrors(count(editor.SeverityError)) }, colors.Danger, false),
-		status(func() string { return tr.EditorWarnings(count(editor.SeverityWarning)) }, colors.Warn, false),
-		status(func() string { return tr.EditorInfos(count(editor.SeverityInfo)) }, colors.Info, false),
-		status(last.Get, colors.Muted, true),
-		ui.Spacer{},
-		status(func() string {
-			if typescript() && analyzing.Get() {
-				return tr.EditorAnalyzing()
-			}
-			return editorSamples[language.Get()].label
-		}, colors.Muted, true),
-		iconTool(tr.EditorToggleProblems(), lucide.TriangleAlert, problemsShown.Get, func() { area.ToggleDock(dock.Bottom) }, true),
-	}}
+	run := func(c editor.Command) func() {
+		return func() {
+			ref.Run(c)
+			ref.Focus()
+		}
+	}
+	field := func(label string, r *core.Ref, value *core.Signal[string], submit func()) core.Node {
+		return ui.Input{Ref: r, Label: label, Placeholder: label, Value: value.Get, OnChange: value.Set, OnSubmit: func(string) { submit() },
+			AutoCapitalize: core.AutoCapitalizeNone, NoAutoCorrect: true}
+	}
+	status := func(fn func() string, c func() core.Color) core.Node {
+		return core.Text{ContentFunc: fn, MaxLines: 1, Style: core.Style{FontFamily: ui.Mono, FontSize: 12, FontVariant: core.FontTabularNums}, StyleFunc: ui.Colored(c)}
+	}
+	languages := make([]ui.Option[string], len(editorLanguages))
+	for i, lang := range editorLanguages {
+		languages[i] = ui.Option[string]{Value: lang, Label: editorSamples[lang].label}
+	}
+	replace := func() { ref.Replace(replacement.GetUntracked()) }
 
-	return core.View{StyleFunc: func() core.Style { return fillPage.Merge(core.Style{Background: colors.Background()}) }, Children: []core.Node{
-		toolbarView,
-		findBar,
-		core.View{Style: core.Style{FlexGrow: 1, MinHeight: core.Pt(0)}, Children: []core.Node{docks}},
-		hoverCard,
-		quickFixList,
-		statusLine,
-	}}
+	source.Children = append(source.Children, hoverCard, quickFixList)
+	return stagePage(cx, source,
+		Section{Title: tr.TerminalOptions(), Note: "editor.Editor", Children: []core.Node{
+			Knob{Name: "Language", Control: ui.Select[string]{Label: "Language", TestID: "knob-Language", Options: languages, Value: language.Get,
+				OnChange: language.Set, Style: core.Style{Width: core.Pt(140)}}},
+			SwitchRow{Label: tr.EditorSoftWrap(), Code: "SoftWrap", Checked: softWrap.Get, OnChange: softWrap.Set},
+			SwitchRow{Label: tr.EditorHideLineNumbers(), Code: "NoLineNumbers", Checked: noLineNumbers.Get, OnChange: noLineNumbers.Set},
+			SwitchRow{Label: tr.EditorShowWhitespace(), Code: "ShowWhitespaces", Checked: whitespaces.Get, OnChange: whitespaces.Set},
+			SwitchRow{Label: tr.EditorReadOnly(), Code: "ReadOnly", Checked: readOnly.Get, OnChange: readOnly.Set},
+		}},
+		Section{Title: tr.EditorFindAndReplace(), Note: "editor.Search", Children: []core.Node{
+			field(tr.EditorFind(), findField, query, run(editor.FindNext)),
+			field(tr.EditorReplace(), nil, replacement, replace),
+			SwitchRow{Label: tr.EditorMatchCase(), Code: "CaseSensitive", Checked: caseSensitive.Get, OnChange: caseSensitive.Set},
+			SwitchRow{Label: tr.EditorWholeWord(), Code: "WholeWord", Checked: wholeWord.Get, OnChange: wholeWord.Set},
+			SwitchRow{Label: tr.EditorRegularExpression(), Code: "Regex", Checked: regex.Get, OnChange: regex.Set},
+			ui.Wrap{Children: []core.Node{
+				small(tr.EditorPreviousMatch(), run(editor.FindPrevious)),
+				small(tr.EditorNextMatch(), run(editor.FindNext)),
+				small(tr.EditorReplace(), replace),
+				small(tr.EditorReplaceAll(), func() { last.Set(tr.EditorReplaced(ref.ReplaceAll(replacement.GetUntracked()))) }),
+			}},
+			core.Show{When: func() bool { return query.Get() != "" }, Then: func(*core.Scope) core.Node { return status(matches, colors.Muted) }},
+		}},
+		Section{Title: tr.KitActions(), Note: "editor.Ref", Children: []core.Node{
+			ui.Wrap{Children: []core.Node{
+				small(tr.EditorFoldAll(), run(editor.FoldAll)),
+				small(tr.EditorUnfoldAll(), run(editor.UnfoldAll)),
+				small(tr.EditorToggleComment(), run(editor.ToggleComment)),
+				small(tr.EditorSelectAll(), run(editor.SelectAll)),
+			}},
+		}},
+		Section{Title: tr.TerminalStatus(), Note: "OnSelectionChange", Children: []core.Node{
+			status(caret, colors.Text),
+			core.View{Style: core.Style{Direction: core.Row, Wrap: core.Wrap, Gap: 12}, Children: []core.Node{
+				status(func() string { return tr.EditorErrors(count(editor.SeverityError)) }, colors.Danger),
+				status(func() string { return tr.EditorWarnings(count(editor.SeverityWarning)) }, colors.Warn),
+				status(func() string { return tr.EditorInfos(count(editor.SeverityInfo)) }, colors.Info),
+			}},
+			status(last.Get, colors.Muted),
+		}})
 }

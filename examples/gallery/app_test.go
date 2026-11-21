@@ -1307,19 +1307,17 @@ func TestTable(t *testing.T) {
 	}
 }
 
-// TestEditor types in the editor, finds a word and opens the large file.
-// TestEditor opens NSH's Editor demo: the simulated language server's
-// problems in the dock, a hover card with a fix that edits the text, the
-// find bar and another language's sample.
+// TestEditor opens the Editor demo: the simulated language server's
+// problems counted in the panel, a hover card with a fix that edits the
+// text, the panel's find field and another language's sample.
 func TestEditor(t *testing.T) {
 	headless(t)
 	app := startDesktop(t)
 	open(app, "Editor")
-	app.Find("text:interface Order {")
+	app.Find("id:stage >> text:interface Order {")
 	app.FastForward(40 * time.Millisecond)
-	app.WaitFor("text:Problems 6", 5*time.Second)
-	app.Find("text:1 error")
-	app.Find("text:4 warnings")
+	app.WaitFor("id:stage-panel >> text:1 error", 5*time.Second)
+	app.Find("id:stage-panel >> text:4 warnings")
 	// The misspelled method: its problem in a hover card, whose fix edits
 	// the text as one step.
 	row := app.Find("id:editor >> text:receipt.prnt();")
@@ -1331,21 +1329,15 @@ func TestEditor(t *testing.T) {
 	app.Press("id:hover-card >> role:button Change spelling to 'print'")
 	app.Find("id:editor >> text:receipt.print();")
 	app.Advance(400 * time.Millisecond)
-	app.WaitFor("text:Problems 5", 5*time.Second)
-	app.Find("text:0 errors")
-	app.Press("role:button Find and replace")
+	app.WaitFor("id:stage-panel >> text:0 errors", 5*time.Second)
 	app.Type("label:Find", "order")
-	app.Find("id:find-bar >> text:matches")
-	app.Key("Escape")
-	app.Settle()
-	if app.Exists("id:find-bar") {
-		t.Error("Escape left the find bar open")
-	}
-	app.Press("id:demo-Editor >> label:Language")
+	app.Find("id:stage-panel >> text:matches")
+	app.Press("id:knob-Language")
 	app.Press("text:Rust")
 	app.Find("text:fn word_counts(text: &str) -> Vec<(&str, usize)> {")
-	app.Find("text:Problems 1")
-	app.Find("text:main.rs")
+	if app.Exists("id:stage >> text:interface Order {") {
+		t.Fatal("the TypeScript sample stayed")
+	}
 }
 
 // TestDiff counts the changes, stages and discards one, and shows the
@@ -1391,7 +1383,7 @@ func TestAppearanceRestylesInPlace(t *testing.T) {
 				switch d.name {
 				case "Editor":
 					app.WaitUntil(5*time.Second, func() bool {
-						return len(app.Query("text:Problems 6")) == 1 && lexed(app, "id:editor >> text:interface Order {")
+						return len(app.Query("text:1 error")) == 1 && lexed(app, "id:editor >> text:interface Order {")
 					})
 				case "DiffView":
 					app.WaitUntil(5*time.Second, func() bool { return lexed(app, `id:diff-rows >> text:/^ *"sync"$/`) })
