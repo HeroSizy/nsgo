@@ -12,7 +12,7 @@ const (
 	// ButtonPrimary is filled with the accent, for the main action. It is
 	// the default.
 	ButtonPrimary ButtonVariant = iota
-	// ButtonSecondary is a quiet fill of the text's color.
+	// ButtonSecondary is a quiet fill of the text's color at a low opacity.
 	ButtonSecondary
 	// ButtonOutline is only a rim.
 	ButtonOutline
@@ -95,24 +95,20 @@ func (b Button) parts(cx *core.Scope) (core.Style, func() core.Style, core.Node)
 		fg = colors.OnAccent
 	}
 	// fill is the face at rest, under the pointer and held down.
-	fill := func() (rest, hover, pressed, border core.Color) {
-		text := colors.Text()
+	fill := func() (rest, hover, pressed core.Color) {
 		switch {
 		case b.Color != nil:
 			c := b.Color()
-			return c, Mix(c, Black(1), 0.12), Mix(c, Black(1), 0.25), c
+			return c, Mix(c, Black(1), 0.12), Mix(c, Black(1), 0.25)
 		case b.Variant == ButtonPrimary:
 			p := cx.Palette()
-			return p.Accent, p.AccentHover, p.AccentPressed, p.Accent
+			return p.Accent, p.AccentHover, p.AccentPressed
 		case b.Variant == ButtonSecondary:
-			// Over the card it sits on, as it would be over the page.
-			bg := colors.Surface()
-			return Mix(bg, text, 0.08), Mix(bg, text, 0.12), Mix(bg, text, 0.18), Mix(bg, text, 0.08)
+			// The text's color at a low opacity, so it holds over any surface.
+			text := colors.Text()
+			return Alpha(text, 0.08), Alpha(text, 0.12), Alpha(text, 0.18)
 		}
-		if b.Variant == ButtonGhost {
-			return 0, colors.Hover(), colors.Pressed(), core.Transparent
-		}
-		return 0, colors.Hover(), colors.Pressed(), colors.Border()
+		return 0, colors.Hover(), colors.Pressed()
 	}
 	var children []core.Node
 	if b.Icon != nil {
@@ -158,11 +154,16 @@ func (b Button) parts(cx *core.Scope) (core.Style, func() core.Style, core.Node)
 	shape.Height, shape.Width = core.Length{}, core.Length{}
 	shape.FlexGrow, shape.FlexShrink, shape.MinHeight = 1, 1, core.Pt(0)
 	face := func() core.Style {
-		rest, hover, pressed, border := fill()
-		return shape.Merge(core.Style{CornerRadius: style.CornerRadius, BorderCurve: core.BorderCurveContinuous,
+		rest, hover, pressed := fill()
+		s := core.Style{CornerRadius: style.CornerRadius, BorderCurve: core.BorderCurveContinuous,
 			Direction: core.Row, AlignItems: core.AlignCenter, JustifyContent: core.JustifyCenter, Gap: 6,
-			Background: rest, BorderWidth: 1, BorderColor: border,
-			GroupStyle: &core.GroupStyle{Hover: &core.Style{Background: hover}, Active: &core.Style{Background: pressed}, Expanded: &core.Style{Background: hover}}})
+			Background: rest,
+			GroupStyle: &core.GroupStyle{Hover: &core.Style{Background: hover}, Active: &core.Style{Background: pressed}, Expanded: &core.Style{Background: hover}}}
+		// Only an outline has a rim.
+		if b.Variant == ButtonOutline && b.Color == nil {
+			s.BorderWidth, s.BorderColor = 1, colors.Border()
+		}
+		return shape.Merge(s)
 	}
 	return style, func() core.Style { return core.Style{FocusVisible: FocusRing(cx, 2)} }, core.View{StyleFunc: face, Children: children}
 }

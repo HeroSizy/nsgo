@@ -8,7 +8,7 @@ import (
 	"github.com/nsgo-dev/nsgo/internal/driver"
 )
 
-// TestButton presses each variant, 28 points tall on desktops and TVs and 44 on touch devices, and an icon's button as a square.
+// TestButton presses each variant, with a rim only on the outline and the secondary's fill see-through, 28 points tall on desktops and TVs and 44 on touch devices, and an icon's button as a square.
 func TestButton(t *testing.T) {
 	each(t, func(t *testing.T, e core.Environment) {
 		var pressed []string
@@ -45,6 +45,17 @@ func TestButton(t *testing.T) {
 		}
 		if got := app.Find("ghost").Children[0].Style.Background; got != 0 {
 			t.Fatalf("ghost = %x at rest, want no fill", got)
+		}
+		if _, _, _, a := app.Find("secondary").Children[0].Style.Background.Components(); a <= 0 || a >= 1 {
+			t.Fatalf("secondary's fill is %v opaque, want see-through", a)
+		}
+		for _, n := range []string{"primary", "secondary", "ghost"} {
+			if w := app.Find(n).Children[0].Style.BorderWidth; w != 0 {
+				t.Fatalf("%s has a %v rim, want none", n, w)
+			}
+		}
+		if w := app.Find("outline").Children[0].Style.BorderWidth; w != 1 {
+			t.Fatalf("outline has a %v rim, want 1", w)
 		}
 		if f := app.Find("icon").Children[0].Frame.Size; f.Width != wantHeight || f.Height != wantHeight {
 			t.Fatalf("icon's button = %v, want a %v square", f, wantHeight)
