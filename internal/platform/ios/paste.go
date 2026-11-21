@@ -26,6 +26,9 @@ func pasteMethods() []objc.MethodDef {
 	return []objc.MethodDef{
 		{Cmd: sel("paste:"), Fn: paste},
 		{Cmd: sel("canPerformAction:withSender:"), Fn: func(self objc.ID, cmd objc.SEL, action objc.SEL, sender objc.ID) bool {
+			if in := inputOf(self); in != nil && in.fs.Config.Readonly && readonlyRefuses[action] {
+				return false
+			}
 			if in := inputOf(self); action == sel("paste:") && in != nil && in.fs.Events.Has(driver.EventPaste) &&
 				!in.fs.Config.Readonly {
 				pb := objc.ID(apple.Class("UIPasteboard")).Send(sel("generalPasteboard"))
@@ -42,6 +45,10 @@ func pasteMethods() []objc.MethodDef {
 		}},
 	}
 }
+
+// readonlyRefuses are the edit menu's actions a read-only field leaves out, keeping those that copy, select and look up.
+var readonlyRefuses = map[objc.SEL]bool{sel("cut:"): true, sel("paste:"): true, sel("pasteAndMatchStyle:"): true,
+	sel("delete:"): true, sel("replace:"): true, sel("_promptForReplace:"): true, sel("captureTextFromCamera:"): true}
 
 // pasteInto reports a paste into editor's input, and whether the editor
 // inserts its text.

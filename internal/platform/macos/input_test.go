@@ -203,3 +203,43 @@ func baselines(v objc.ID, w, h float64) []float64 {
 	}
 	return out
 }
+
+// TestReadonlyInputSelects checks that an input turning read-only while it is edited stops taking edits at once, its field editor included, and that its text still selects, single-line and multiline.
+func TestReadonlyInputSelects(t *testing.T) {
+	onMain(func() {
+		loadAppKit()
+		window := objc.ID(apple.Class("NSWindow")).Send(selAlloc).Send(sel("initWithContentRect:styleMask:backing:defer:"),
+			apple.Rect(0, 0, 400, 100), uint(0), uint(2), false)
+		window.Send(sel("setReleasedWhenClosed:"), false)
+		defer window.Send(selRelease)
+		for _, multiline := range []bool{false, true} {
+			s := &surface{views: make([]*view, 2), animator: driver.NewAnimator(func(driver.Event) {})}
+			v := s.create(driver.KindInput, 1)
+			s.views[v.id] = v
+			window.Send(sel("contentView")).Send(selAddSubview, v.native)
+			v.native.Send(selSetFrame, apple.Rect(0, 0, 300, 60))
+			c := driver.InputConfig{Multiline: multiline, Content: driver.Bounds{Size: driver.Size{Width: 300, Height: 60}}}
+			v.configure(&c)
+			v.input.focus()
+			if v.input.editor() == 0 {
+				t.Fatalf("multiline %v: no editor while focused", multiline)
+			}
+			c.Readonly = true
+			v.configure(&c)
+			e := v.input.editor()
+			if objc.Send[bool](e, sel("isEditable")) || objc.Send[bool](v.input.field, sel("isEditable")) {
+				t.Errorf("multiline %v: the input being edited still edits once read-only", multiline)
+			}
+			if !objc.Send[bool](e, sel("isSelectable")) || !objc.Send[bool](v.input.field, sel("isSelectable")) {
+				t.Errorf("multiline %v: a read-only input's text does not select", multiline)
+			}
+			c.Readonly = false
+			v.configure(&c)
+			if e := v.input.editor(); e != 0 && !objc.Send[bool](e, sel("isEditable")) {
+				t.Errorf("multiline %v: the input does not edit again once no longer read-only", multiline)
+			}
+			window.Send(sel("makeFirstResponder:"), objc.ID(0))
+			s.delete(v, false)
+		}
+	})
+}

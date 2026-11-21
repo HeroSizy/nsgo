@@ -144,10 +144,10 @@ func baseToolbarForm(cx *core.Scope, axis *core.Signal[base.Axis], bold, disable
 	}}
 }
 
-func baseInputForm(cx *core.Scope, value *core.Signal[string], multiline, masked, disabled *core.Signal[bool]) Form {
+func baseInputForm(cx *core.Scope, value *core.Signal[string], multiline, masked, readonly, disabled *core.Signal[bool]) Form {
 	tr := locales.For(cx)
 	return Form{Name: "base.Input", Fill: true, Stage: func() core.Node {
-		return base.Input{Value: value.Get, OnChange: value.Set, Placeholder: tr.CompTypeHere(), Multiline: multiline.Get(), Masked: masked.Get(), Disabled: disabled.Get,
+		return base.Input{Value: value.Get, OnChange: value.Set, Placeholder: tr.CompTypeHere(), Multiline: multiline.Get(), Masked: masked.Get(), ReadonlyFunc: readonly.Get, Disabled: disabled.Get,
 			Style: core.Style{Height: core.Pt(32), Padding: core.Symmetric(0, 8), FontSize: 13, CornerRadius: 6, BorderWidth: 1}, StyleFunc: bareField(cx)}
 	}}
 }

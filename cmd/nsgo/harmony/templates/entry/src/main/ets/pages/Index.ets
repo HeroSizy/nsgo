@@ -284,6 +284,8 @@ class VNode {
   value: string = '';
   masked: boolean = false;
   multiline: boolean = false;
+  readonly: boolean = false;
+  disabled: boolean = false;
   // A text field's content box in its frame: where its text goes, inside its padding and border.
   inX: number = 0;
   inY: number = 0;
@@ -673,6 +675,8 @@ class Tree {
           v.inY = o[10] as number;
           v.inW = o[11] as number;
           v.inH = o[12] as number;
+          v.readonly = o[13] as boolean;
+          v.disabled = o[14] as boolean;
         } else if (code === 'iv') {
           v.value = o[2] as string;
         } else if (code === 'im') {
@@ -3244,6 +3248,10 @@ class Renderer {
     }
     a.fontSize(v.fs).fontColor(v.color)
       .type(v.masked ? InputType.Password : InputType.Normal)
+      .enabled(!v.disabled)
+      // A read-only field still focuses, selects and copies; it only refuses what the user would insert or delete.
+      .onWillInsert(() => !v.readonly)
+      .onWillDelete(() => !v.readonly)
       .padding(pad)
       .placeholderFont({ size: v.fs, weight: v.fw })
       .onFocus(() => {

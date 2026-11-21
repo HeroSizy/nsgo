@@ -623,7 +623,7 @@ func (m *mounter) text(id driver.NodeID, t *driver.TextContent) {
 	}
 }
 
-// input writes a text field's place, look and value.
+// input writes a text field's place, look, value and editability.
 func (m *mounter) input(id driver.NodeID, c *driver.InputConfig) {
 	if c == nil {
 		return
@@ -639,7 +639,8 @@ func (m *mounter) input(id driver.NodeID, c *driver.InputConfig) {
 		str(webstyle.Color(c.Style.Color)).str(webstyle.Fill(c.PlaceholderColor)).
 		boolean(c.Masked).boolean(c.Multiline).
 		num(float64(c.Content.Origin.X)).num(float64(c.Content.Origin.Y)).
-		num(float64(c.Content.Size.Width)).num(float64(c.Content.Size.Height))
+		num(float64(c.Content.Size.Width)).num(float64(c.Content.Size.Height)).
+		boolean(c.Readonly).boolean(c.Disabled)
 }
 
 // scrollTo scrolls a scroll view to offset, as the app asked.

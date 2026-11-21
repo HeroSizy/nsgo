@@ -803,8 +803,11 @@ func (v *view) configure(c *driver.InputConfig) {
 		in.field.Send(sel("invalidateTextContainerOrigin"))
 	} else {
 		in.field.Send(selSetEnabled, !c.Disabled)
+		// A read-only field still selects and copies: turning editing off turns selecting off with it, and the field editor of a field being edited keeps what it had.
+		in.field.Send(sel("setSelectable:"), !c.Disabled)
 		setPlaceholder(in.field, c.Placeholder, objc.ID(font), placeholderColor(c), align)
 		if e := in.field.Send(selCurrentEditor); e != 0 {
+			e.Send(selSetEditable, !c.Readonly && !c.Disabled)
 			e.Send(selSetFont, objc.ID(font))
 			e.Send(selSetTextColor, nsColor(c.Style.Color))
 			e.Send(selSetAlignment, align)

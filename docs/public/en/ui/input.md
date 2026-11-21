@@ -29,7 +29,7 @@ ui.Input{Value: draft.Get, OnChange: draft.Set, Placeholder: "New task",
 
 ## Fields
 
-`Multiline` wraps, starts three lines tall and grows with its text unless its style sets `Height` or `MinHeight`. `Masked` hides the characters, `Readonly` and `Disabled` stop edits, and `MaxLength` caps the UTF-16 units the user enters. `Placeholder` can be a function with `PlaceholderFunc`.
+`Multiline` wraps, starts three lines tall and grows with its text unless its style sets `Height` or `MinHeight`. `Masked` hides the characters, `Readonly` stops edits while the text still selects and copies, `Disabled` turns the field off, and `MaxLength` caps the UTF-16 units the user enters. `Placeholder` can be a function with `PlaceholderFunc`.
 
 ```go
 ui.Input{Masked: true, Value: password.Get, OnChange: password.Set,

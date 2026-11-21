@@ -52,8 +52,6 @@ func inputMethods() []objc.MethodDef {
 			}
 			return false
 		}},
-		{Cmd: sel("textFieldShouldBeginEditing:"), Fn: inputShouldBegin},
-		{Cmd: sel("textViewShouldBeginEditing:"), Fn: inputShouldBegin},
 		{Cmd: sel("textFieldDidBeginEditing:"), Fn: func(self objc.ID, _ objc.SEL, _ objc.ID) { inputAt(self).focusChanged(true) }},
 		{Cmd: sel("textViewDidBeginEditing:"), Fn: func(self objc.ID, _ objc.SEL, _ objc.ID) { inputAt(self).focusChanged(true) }},
 		{Cmd: sel("textFieldDidEndEditing:"), Fn: func(self objc.ID, _ objc.SEL, _ objc.ID) { inputAt(self).focusChanged(false) }},
@@ -69,7 +67,7 @@ func inputMethods() []objc.MethodDef {
 // registerInput registers the editor classes.
 func registerInput() {
 	caretRect := objc.MethodDef{Cmd: sel("caretRectForPosition:"), Fn: func(self objc.ID, cmd objc.SEL, pos objc.ID) apple.CGRect {
-		if in := inputOf(self); in != nil && in.fs.Config.HideCaret {
+		if in := inputOf(self); in != nil && (in.fs.Config.HideCaret || in.fs.Config.Readonly) {
 			return apple.CGRect{}
 		}
 		return apple.SendSuper[apple.CGRect](self, cmd, pos)
@@ -373,6 +371,9 @@ func (in *input) shouldChange(r apple.NSRange, repl string) bool {
 	if in.applying || in.clipping {
 		return true
 	}
+	if in.fs.Config.Readonly {
+		return false
+	}
 	if in.multiline && repl == "\n" && !in.lineBreak {
 		if _, composing := in.markedText(); !composing {
 			insert, blur := in.fs.Return(in.text(), false)
@@ -406,11 +407,6 @@ func (in *input) shouldChange(r apple.NSRange, repl string) bool {
 func inputShouldChange(self objc.ID, _ objc.SEL, _ objc.ID, r apple.NSRange, repl objc.ID) bool {
 	in := inputAt(self)
 	return in == nil || in.shouldChange(r, apple.GoString(repl))
-}
-
-func inputShouldBegin(self objc.ID, _ objc.SEL, _ objc.ID) bool {
-	in := inputAt(self)
-	return in == nil || !in.fs.Config.Readonly
 }
 
 // value is ItemInputValue.
@@ -595,7 +591,7 @@ func (v *view) configure(c *driver.InputConfig) {
 		in.label.Send(selSetTextAlignment, align)
 		setPlaceholderLabel(in.label, c.Placeholder, objc.ID(font), placeholder, c.Style.LineHeight, align)
 		styleLines(f, objc.ID(font), uiColor(c.Style.Color), c.Style.LineHeight, align)
-		f.Send(sel("setEditable:"), !c.Disabled)
+		f.Send(sel("setEditable:"), !c.Readonly && !c.Disabled)
 		f.Send(sel("setSelectable:"), !c.Disabled)
 		in.lift = 0
 		if c.Style.LineHeight > 0 {
@@ -609,6 +605,20 @@ func (v *view) configure(c *driver.InputConfig) {
 	} else {
 		setPlaceholder(f, c.Placeholder, objc.ID(font), placeholder)
 		f.Send(selSetEnabled, !c.Disabled)
+		// A read-only field still takes the focus, so the user can select and copy its text, but with no keyboard: an empty view is its input view, and shouldChange refuses every edit.
+		if c.Readonly != (f.Send(sel("inputView")) != 0) {
+			var none objc.ID
+			if c.Readonly {
+				none = objc.ID(apple.Class("UIView")).Send(selNew)
+			}
+			f.Send(sel("setInputView:"), none)
+			if none != 0 {
+				none.Send(selRelease)
+			}
+			if objc.Send[bool](f, sel("isFirstResponder")) {
+				f.Send(sel("reloadInputViews"))
+			}
+		}
 	}
 	apple.Release(font)
 	f.Send(selSetSecure, c.Masked && !c.Multiline)

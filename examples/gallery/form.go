@@ -610,11 +610,11 @@ func selectionDemo() core.Node {
 func inputPlayground(cx *core.Scope) core.Node {
 	tr := locales.For(cx)
 	value := core.NewSignal(cx, "")
-	multiline, masked, disabled := core.NewSignal(cx, false), core.NewSignal(cx, false), core.NewSignal(cx, false)
-	return Playground{Title: "Input", Fill: true, Base: baseInputForm(cx, value, multiline, masked, disabled), Stage: func() core.Node {
+	multiline, masked, readonly, disabled := core.NewSignal(cx, false), core.NewSignal(cx, false), core.NewSignal(cx, false), core.NewSignal(cx, false)
+	return Playground{Title: "Input", Fill: true, Base: baseInputForm(cx, value, multiline, masked, readonly, disabled), Stage: func() core.Node {
 		return ui.Input{Value: value.Get, OnChange: value.Set, Placeholder: tr.CompTypeHere(), Multiline: multiline.Get(), Masked: masked.Get(),
-			Disabled: disabled.Get}
-	}, BaseKnobs: []core.Node{boolKnob("Multiline", multiline), boolKnob("Masked", masked), boolKnob("Disabled", disabled)}}
+			ReadonlyFunc: readonly.Get, Disabled: disabled.Get}
+	}, BaseKnobs: []core.Node{boolKnob("Multiline", multiline), boolKnob("Masked", masked), boolKnob("Readonly", readonly), boolKnob("Disabled", disabled)}}
 }
 
 // numberInputCard is ui.NumberInput under its base form, with their props to
