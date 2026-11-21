@@ -367,13 +367,17 @@ func (e *ed) rowRects(a, b pos, from, to int, style *core.Style, class string, o
 			continue
 		}
 		l := r.line(d.line)
+		// Measure on this row: a wrapped row's end is the next row's start.
+		xAt := func(col int) float32 {
+			return pad + float32(colAt(l, col, e.st.tab)-colAt(l, d.start, e.st.tab))*e.charW
+		}
 		x0 := float32(pad)
 		if a.line == d.line && a.col >= d.start {
-			x0 = e.xOf(maxPos(a, pos{d.line, d.start}))
+			x0 = xAt(a.col)
 		}
-		x1 := e.xOf(pos{d.line, d.end})
+		x1 := xAt(d.end)
 		if b.line == d.line && b.col <= d.end {
-			x1 = e.xOf(b)
+			x1 = xAt(b.col)
 		} else if d.end == len(l) {
 			x1 += e.charW / 2
 		}

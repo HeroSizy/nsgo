@@ -23,3 +23,18 @@ func TestBlockDragSelectsColumns(t *testing.T) {
 		t.Fatalf("block: %+v", got)
 	}
 }
+
+func TestSelectionCoversWrappedRows(t *testing.T) {
+	ref := &Ref{}
+	nsgotest.Start(t, func(cx *core.Scope) core.Node {
+		return Editor{Ref: ref, DefaultValue: "aaaa bbbb cccc\nx", SoftWrap: true, Style: core.Style{Width: core.Pt(400), Height: core.Pt(300)}}
+	})
+	e := ref.e
+	e.st.wrap = 10
+	e.st.relayout()
+	e.st.setSels([]selection{{anchor: pos{0, 0}, head: pos{1, 1}, goal: -1}})
+	got := e.selectionRects()
+	if len(got) != 3 || got[0].y != 0 || got[0].w != 10*e.charW {
+		t.Fatalf("rects %+v", got)
+	}
+}
