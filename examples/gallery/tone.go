@@ -77,18 +77,14 @@ func (t Tone) Tint(cx *core.Scope) core.Color {
 // Badge is the badge in the tone's color.
 func (t Tone) Badge() ui.BadgeVariant {
 	switch t {
-	case ToneAccent:
+	case ToneAccent, ToneInfo:
 		return ui.BadgeAccent
-	case ToneInfo:
-		return ui.BadgeInfo
 	case ToneWarn:
 		return ui.BadgeWarn
-	case ToneDanger:
+	case ToneDanger, ToneDown:
 		return ui.BadgeDanger
 	case ToneUp:
-		return ui.BadgeUp
-	case ToneDown:
-		return ui.BadgeDown
+		return ui.BadgeSuccess
 	}
 	return ui.BadgeNeutral
 }

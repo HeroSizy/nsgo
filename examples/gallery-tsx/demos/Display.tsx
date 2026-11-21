@@ -2,7 +2,7 @@ import { Image as PlainImage, signal, Text, token, View } from "nsgo";
 import { Avatar, AvatarGroup, Badge, Button, Carousel, Image, ImageCompare } from "nsgo/ui";
 import { BoolKnob, ChoiceKnob, NumberKnob, Page, Playground, Row } from "../parts";
 
-const badgeVariants = ["neutral", "accent", "info", "warn", "danger", "up", "down", "outline"] as const;
+const badgeVariants = ["neutral", "accent", "success", "warn", "danger"] as const;
 
 export function BadgeDemo() {
   return (

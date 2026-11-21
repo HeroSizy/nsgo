@@ -41,7 +41,7 @@ export function ListDemo() {
             <View class="h-8 flex-row items-center gap-2 px-2">
               <Text class="flex-1 text-[13px] text-text">{tasks[i].title}</Text>
               <If when={tasks[i].done}>
-                <Badge text="done" variant="up" />
+                <Badge text="done" variant="success" />
               </If>
             </View>
           )}

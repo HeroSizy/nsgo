@@ -111,7 +111,7 @@ export function PhotosDemo() {
             <Text class="text-[15px] font-semibold text-text">Photo stream</Text>
             <Text class="text-[13px] text-muted">A recycled list of remote photos</Text>
           </View>
-          <Badge text="Remote" variant="info" />
+          <Badge text="Remote" variant="accent" />
         </View>
         <View class="flex-row items-baseline gap-1">
           <Text testID="photos-count" class="text-[40px] font-semibold tracking-tight text-text">{photos().length.toLocaleString("en")}</Text>

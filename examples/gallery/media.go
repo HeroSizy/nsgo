@@ -192,7 +192,7 @@ func site(cx *core.Scope) core.Node {
 		if state.Get().Loading {
 			return ui.Badge{Text: tr.MediaLoading(), Variant: ui.BadgeWarn}
 		}
-		return ui.Badge{Text: tr.MediaLoaded(), Variant: ui.BadgeUp}
+		return ui.Badge{Text: tr.MediaLoaded(), Variant: ui.BadgeSuccess}
 	})}, Children: []core.Node{
 		core.View{StyleFunc: func() core.Style {
 			return fin.Track().Over(core.Style{Height: core.Pt(40), Direction: core.Row, AlignItems: core.AlignCenter, Gap: 8, Padding: core.Symmetric(0, 14),

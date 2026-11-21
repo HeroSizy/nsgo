@@ -132,8 +132,8 @@ func roleTokens() string {
 var enums = []tsx.Option{
 	tsx.Enum(map[string]core.AlertRole{"default": core.AlertDefault, "cancel": core.AlertCancel, "destructive": core.AlertDestructive}),
 	tsx.Enum(map[string]ui.AvatarStatus{"none": ui.AvatarNoStatus, "online": ui.AvatarOnline, "offline": ui.AvatarOffline}),
-	tsx.Enum(map[string]ui.BadgeVariant{"neutral": ui.BadgeNeutral, "accent": ui.BadgeAccent, "info": ui.BadgeInfo, "warn": ui.BadgeWarn,
-		"danger": ui.BadgeDanger, "up": ui.BadgeUp, "down": ui.BadgeDown, "outline": ui.BadgeOutline}),
+	tsx.Enum(map[string]ui.BadgeVariant{"neutral": ui.BadgeNeutral, "accent": ui.BadgeAccent, "success": ui.BadgeSuccess,
+		"warn": ui.BadgeWarn, "danger": ui.BadgeDanger}),
 	tsx.Enum(map[string]ui.ButtonVariant{"primary": ui.ButtonPrimary, "secondary": ui.ButtonSecondary, "outline": ui.ButtonOutline,
 		"ghost": ui.ButtonGhost}),
 	tsx.Enum(map[string]ui.CollapsibleVariant{"arrowRight": ui.CollapsibleArrowRight, "arrowLeft": ui.CollapsibleArrowLeft}),

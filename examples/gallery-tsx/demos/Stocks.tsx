@@ -70,7 +70,7 @@ function Row(props: { stock: Stock; active: boolean; onPress: () => void }) {
       <Sparkline stock={props.stock} />
       <View class="w-[92px] items-end gap-0.5">
         <Text testID={`price-${props.stock.symbol}`} class="font-mono text-[14px] text-text">{money(last(props.stock))}</Text>
-        <Badge text={percent(change(props.stock))} variant={up() ? "up" : "down"} />
+        <Badge text={percent(change(props.stock))} variant={up() ? "success" : "danger"} />
       </View>
     </View>
   );

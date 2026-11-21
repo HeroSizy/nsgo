@@ -56,7 +56,7 @@ func environmentCard(cx *core.Scope) core.Node {
 	inset := func(f func(core.Edges) core.Points) func() string {
 		return func() string { return itoa(int(f(env.SafeArea()) + 0.5)) }
 	}
-	return Card{Title: tr.SystemEnvironment(), Description: tr.SystemUpdatesWhenTheWindowInsets(), Actions: []core.Node{ui.Badge{Text: tr.SystemLive(), Variant: ui.BadgeUp}}, Children: []core.Node{
+	return Card{Title: tr.SystemEnvironment(), Description: tr.SystemUpdatesWhenTheWindowInsets(), Actions: []core.Node{ui.Badge{Text: tr.SystemLive(), Variant: ui.BadgeSuccess}}, Children: []core.Node{
 		core.View{Style: core.Style{Direction: core.Row, Gap: 16, AlignItems: core.AlignCenter}, Children: []core.Node{
 			core.View{Style: core.Style{FlexGrow: 1, FlexShrink: 1, Gap: 12}, Children: []core.Node{
 				core.View{Style: core.Style{Gap: 2}, Children: []core.Node{
@@ -102,7 +102,7 @@ func environmentCard(cx *core.Scope) core.Node {
 				return tr.SystemLightScheme()
 			}, VariantFunc: func() ui.BadgeVariant {
 				if env.Dark() {
-					return ui.BadgeInfo
+					return ui.BadgeAccent
 				}
 				return ui.BadgeWarn
 			}},
@@ -373,7 +373,7 @@ func shortcuts(cx *core.Scope) core.Node {
 		core.View{Style: core.Style{Direction: core.Row, AlignItems: core.AlignCenter, Gap: 8}, Children: []core.Node{
 			core.Dynamic(func(*core.Scope) core.Node {
 				if on.Get() {
-					return ui.Badge{Text: tr.SystemLightOn(), Variant: ui.BadgeUp}
+					return ui.Badge{Text: tr.SystemLightOn(), Variant: ui.BadgeSuccess}
 				}
 				return ui.Badge{Text: tr.SystemLightOff()}
 			}),

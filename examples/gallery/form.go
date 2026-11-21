@@ -395,7 +395,7 @@ func formDemo(cx *core.Scope) core.Node {
 			case r.text == "":
 				return core.Group{}
 			case r.t == ToneUp:
-				return ui.Badge{Text: tr.FormSent(), Variant: ui.BadgeUp}
+				return ui.Badge{Text: tr.FormSent(), Variant: ui.BadgeSuccess}
 			}
 			return ui.Badge{Text: tr.FormCheck(), Variant: ui.BadgeDanger}
 		})}, Children: []core.Node{

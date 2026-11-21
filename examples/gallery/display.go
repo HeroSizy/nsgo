@@ -19,8 +19,8 @@ import (
 var demoPeople = []string{"Ada Lovelace", "Grace Hopper", "Alan Turing", "Katherine Johnson", "Linus Pauling", "Edsger Dijkstra"}
 
 // badgeVariants are the badge's looks, each labeled by its name.
-var badgeVariants = options([]ui.BadgeVariant{ui.BadgeNeutral, ui.BadgeAccent, ui.BadgeInfo, ui.BadgeWarn, ui.BadgeDanger, ui.BadgeUp, ui.BadgeDown, ui.BadgeOutline},
-	"Neutral", "Accent", "Info", "Warn", "Danger", "Up", "Down", "Outline")
+var badgeVariants = options([]ui.BadgeVariant{ui.BadgeNeutral, ui.BadgeAccent, ui.BadgeSuccess, ui.BadgeWarn, ui.BadgeDanger},
+	"Neutral", "Accent", "Success", "Warn", "Danger")
 
 func badgeCard(cx *core.Scope) core.Node {
 	return Playground{Title: "Badge", UIOnly: true, Stage: func() core.Node {

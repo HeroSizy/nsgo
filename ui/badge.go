@@ -10,18 +10,12 @@ const (
 	BadgeNeutral BadgeVariant = iota
 	// BadgeAccent tints the capsule with the accent.
 	BadgeAccent
-	// BadgeInfo tints the capsule with the info color.
-	BadgeInfo
+	// BadgeSuccess tints the capsule with the success color.
+	BadgeSuccess
 	// BadgeWarn tints the capsule with the warning color.
 	BadgeWarn
 	// BadgeDanger tints the capsule with the danger color.
 	BadgeDanger
-	// BadgeUp tints the capsule with the color of a rise.
-	BadgeUp
-	// BadgeDown tints the capsule with the color of a fall.
-	BadgeDown
-	// BadgeOutline draws only the capsule's rim.
-	BadgeOutline
 )
 
 // tint is the color a variant tints the capsule with, and false for a
@@ -30,16 +24,12 @@ func (v BadgeVariant) tint(colors Colors) (core.Color, bool) {
 	switch v {
 	case BadgeAccent:
 		return colors.Accent(), true
-	case BadgeInfo:
-		return colors.Info(), true
+	case BadgeSuccess:
+		return colors.Up(), true
 	case BadgeWarn:
 		return colors.Warn(), true
 	case BadgeDanger:
 		return colors.Danger(), true
-	case BadgeUp:
-		return colors.Up(), true
-	case BadgeDown:
-		return colors.Down(), true
 	}
 	return 0, false
 }
@@ -74,11 +64,7 @@ func (b Badge) Render(cx *core.Scope) core.Node {
 	}
 	return core.View{Style: core.Style{Padding: core.Symmetric(2, 8), AlignSelf: core.AlignStart, CornerRadius: 12, JustifyContent: core.JustifyCenter, BorderWidth: 1},
 		StyleFunc: func() core.Style {
-			v := variant()
-			if v == BadgeOutline {
-				return core.Style{BorderColor: Mix(colors.Background(), colors.Muted(), 0.5)}
-			}
-			tint, ok := v.tint(colors)
+			tint, ok := variant().tint(colors)
 			if !ok {
 				return core.Style{Background: colors.Surface(), BorderColor: colors.Border()}
 			}

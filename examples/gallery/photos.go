@@ -168,7 +168,7 @@ func photosDemo(cx *core.Scope) core.Node {
 			Direction: core.Row, AlignItems: core.AlignCenter, Gap: 8, Animated: &core.AnimatedStyle{Opacity: lerp(collapsed, [2]float64{0, 0.5}, [2]float64{1, 0})}},
 			Children: []core.Node{
 				core.Text{Content: tr.PhotosARecycledListOfRemote(), MaxLines: 1, Style: core.Style{FlexShrink: 1, FontSize: 13}, StyleFunc: ui.Colored(colors.Muted)},
-				ui.Badge{Text: tr.PhotosRemote(), Variant: ui.BadgeInfo},
+				ui.Badge{Text: tr.PhotosRemote(), Variant: ui.BadgeAccent},
 			}},
 		// The bar: the title, which shrinks into it around its left edge,
 		// and the count, which fades in.

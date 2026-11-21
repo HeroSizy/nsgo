@@ -355,7 +355,7 @@ func pointerEventsCard(cx *core.Scope) core.Node {
 	through := core.NewSignal(cx, 0)
 	warn := colors.Warn
 	hatch := func() core.Color { return ui.Alpha(warn(), 0.28) }
-	return Card{Title: tr.GestPointerEvents(), Description: Hint(cx, tr.GestAnOverlayThatLetsTaps(), tr.GestAnOverlayThatLetsClicks()), Actions: []core.Node{ui.Badge{TextFunc: func() string { return itoa(through.Get()) }, Variant: ui.BadgeUp}}, Children: []core.Node{
+	return Card{Title: tr.GestPointerEvents(), Description: Hint(cx, tr.GestAnOverlayThatLetsTaps(), tr.GestAnOverlayThatLetsClicks()), Actions: []core.Node{ui.Badge{TextFunc: func() string { return itoa(through.Get()) }, Variant: ui.BadgeSuccess}}, Children: []core.Node{
 		core.View{Style: core.Style{Height: core.Pt(88)}, Children: []core.Node{
 			ui.Press{OnPress: func() { through.Update(func(n int) int { return n + 1 }) }, Scale: 0.98, Label: tr.GestButtonUnderAnOverlay(), Style: core.Style{FlexGrow: 1}, Children: []core.Node{
 				core.View{StyleFunc: func() core.Style {
@@ -488,7 +488,7 @@ func accessibleRows(cx *core.Scope) core.Node {
 	}
 	return Card{Title: tr.GestAccessibility(), Description: tr.GestRolesLabelsAndHintsFor(), Actions: []core.Node{core.Dynamic(func(*core.Scope) core.Node {
 		if l := last.Get(); l != "" {
-			return ui.Badge{Text: l, Variant: ui.BadgeInfo}
+			return ui.Badge{Text: l, Variant: ui.BadgeAccent}
 		}
 		return core.Group{}
 	})}, Children: rows}

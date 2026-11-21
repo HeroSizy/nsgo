@@ -156,7 +156,7 @@ func pressFeedback(cx *core.Scope) core.Node {
 				if disabled.Get() {
 					return ui.Badge{Text: tr.CompOff()}
 				}
-				return ui.Badge{Text: tr.CompOn(), Variant: ui.BadgeUp}
+				return ui.Badge{Text: tr.CompOn(), Variant: ui.BadgeSuccess}
 			}))}},
 		core.View{Style: core.Style{Direction: core.Row, AlignItems: core.AlignCenter, Gap: 12}, Children: []core.Node{
 			core.View{Style: fill, Children: []core.Node{Caption{Label: tr.CompLastPressed(), Note: last.Get}}},
