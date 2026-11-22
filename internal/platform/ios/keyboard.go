@@ -119,3 +119,18 @@ func (s *surface) keepFocusedClear() {
 	objc.ID(apple.Class("UIView")).Send(sel("animateWithDuration:animations:"), s.keyboardDuration.Seconds(), animations)
 	animations.Release()
 }
+
+const gameControllerPath = "/System/Library/Frameworks/GameController.framework/GameController"
+
+// GameController posts these as a physical keyboard connects or goes.
+var hardwareKeyboardNotes = []string{"GCKeyboardDidConnectNotification", "GCKeyboardDidDisconnectNotification"}
+
+// hardwareKeyboard reports whether a physical keyboard is attached:
+// GameController keeps one coalesced keyboard for all of them (iOS 14).
+func hardwareKeyboard() bool {
+	// Looking up the notification loads GameController, and with it GCKeyboard.
+	if apple.Global(gameControllerPath, hardwareKeyboardNotes[0]) == 0 {
+		return false
+	}
+	return objc.ID(apple.Class("GCKeyboard")).Send(sel("coalescedKeyboard")) != 0
+}

@@ -47,6 +47,10 @@ type Environment struct {
 	// asks; 0 means 1.
 	FontScale    float32
 	ReduceMotion bool
+	// HardwareKeyboard says a physical keyboard is attached to a phone or
+	// tablet: Bluetooth, USB or a keyboard case. Only iOS, iPadOS and
+	// Android report it.
+	HardwareKeyboard bool
 	// IncreaseContrast says the user asked the system for stronger contrast.
 	IncreaseContrast bool
 	ScreenReader     bool

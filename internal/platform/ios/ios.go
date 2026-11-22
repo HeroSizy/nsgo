@@ -794,6 +794,7 @@ func (s *surface) environment() driver.Environment {
 		Dark:             objc.Send[int](traits, sel("userInterfaceStyle")) == dark,
 		FontScale:        float32(objc.Send[float64](body, sel("pointSize")) / 17),
 		ReduceMotion:     uiReduceMotion(),
+		HardwareKeyboard: hardwareKeyboard(),
 		IncreaseContrast: uiDarkerColors(),
 		ScreenReader:     uiVoiceOver(),
 		RTL:              rtl,
@@ -899,6 +900,11 @@ func (s *surface) observe() {
 		})
 	}
 	on(apple.Global("/System/Library/Frameworks/Foundation.framework/Foundation", "NSCurrentLocaleDidChangeNotification"), refresh)
+	for _, name := range hardwareKeyboardNotes {
+		if note := apple.Global(gameControllerPath, name); note != 0 {
+			on(note, refresh)
+		}
+	}
 	on(apple.Global(uikitPath, "UIKeyboardWillChangeFrameNotification"), func(note objc.ID) { s.keyboardMoved(note, false) })
 	on(apple.Global(uikitPath, "UIKeyboardWillHideNotification"), func(note objc.ID) { s.keyboardMoved(note, true) })
 }

@@ -313,3 +313,28 @@ func TestDirectionSaysTheWordsInTheAppsLanguage(t *testing.T) {
 		}
 	}
 }
+
+// TestEnvironmentReadsAHardwareKeyboard reads the second flags byte's
+// keyboard bit as NsgoView.environmentPayload writes it.
+func TestEnvironmentReadsAHardwareKeyboard(t *testing.T) {
+	for _, attached := range []bool{false, true} {
+		var w writer
+		w.floats(0, 0, 0, 0, 0, 1, 2) // safe area, keyboard, font scale, density
+		w.byte(0)
+		more := byte(4)
+		if attached {
+			more |= 8
+		}
+		w.byte(more)
+		w.byte(byte(driver.IdiomTablet))
+		w.str("en-US")
+		w.str("")
+		w.str("")
+		w.floats(56, 112)
+		w.u32(35)
+		env := readEnvironment(&reader{w.buf})
+		if env.HardwareKeyboard != attached || !env.Audio || env.Idiom != driver.IdiomTablet {
+			t.Errorf("attached %v: read %+v", attached, env)
+		}
+	}
+}

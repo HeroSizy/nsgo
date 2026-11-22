@@ -1032,7 +1032,11 @@ public class NsgoView extends FrameLayout implements NsgoEngine.Listener {
                     | (increaseContrast ? 128 : 0)
                     | (inactive ? 16 : 0) | (background ? 32 : 0) | (Services.hasCamera(getContext()) ? 64 : 0));
             // The first byte's eight bits are taken: what else the device can do follows in a second.
-            d.writeByte((Speaker.available(getContext()) ? 1 : 0) | (Scanner.available(getContext()) ? 2 : 0) | 4);
+            // A physical keyboard, Bluetooth, USB or a keyboard case, attached and not folded away.
+            boolean hardKeyboard = config.keyboard == Configuration.KEYBOARD_QWERTY
+                    && config.hardKeyboardHidden == Configuration.HARDKEYBOARDHIDDEN_NO;
+            d.writeByte((Speaker.available(getContext()) ? 1 : 0) | (Scanner.available(getContext()) ? 2 : 0) | 4
+                    | (hardKeyboard ? 8 : 0));
             int idiom = config.smallestScreenWidthDp >= 600 ? Protocol.IDIOM_TABLET : Protocol.IDIOM_PHONE;
             if ((config.uiMode & Configuration.UI_MODE_TYPE_MASK) == Configuration.UI_MODE_TYPE_TELEVISION) {
                 idiom = Protocol.IDIOM_TV;

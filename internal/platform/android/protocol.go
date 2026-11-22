@@ -451,6 +451,8 @@ func readEnvironment(r *reader) driver.Environment {
 	// A camera the app may read frames of: one the device has, and CAMERA in the app's manifest.
 	env.ScanCode = more&2 != 0
 	env.Audio = more&4 != 0
+	// A physical keyboard attached and not hidden: Bluetooth, USB or a keyboard case.
+	env.HardwareKeyboard = more&8 != 0
 	env.Idiom = driver.Idiom(r.byte())
 	env.Locale = r.str()
 	env.DeviceName = r.str()

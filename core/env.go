@@ -44,6 +44,7 @@ type Env struct {
 	settings       *Signal[LocaleSettings]
 	displays       *Signal[*displayList]
 	systemRTL      *Signal[bool]
+	hardKeyboard   *Signal[bool]
 	language       *Memo[string]
 	rtl            *Memo[bool]
 	os             *Signal[OS]
@@ -96,6 +97,7 @@ func newEnv(cx *Scope, app *Env) *Env {
 		keyboardDuration: NewSignal(cx, 250*time.Millisecond),
 		dark:             NewSignal(cx, false),
 		reduce:           NewSignal(cx, false),
+		hardKeyboard:     NewSignal(cx, false),
 		contrast:         NewSignal(cx, false),
 		systemRTL:        NewSignal(cx, false),
 		reader:           NewSignal(cx, false),
@@ -214,6 +216,7 @@ func (e *Env) set(v Environment) {
 	e.systemDark = v.Dark
 	e.dark.Set(e.shownDark())
 	e.reduce.Set(v.ReduceMotion)
+	e.hardKeyboard.Set(v.HardwareKeyboard)
 	e.contrast.Set(v.IncreaseContrast)
 	e.systemRTL.Set(v.RTL)
 	e.reader.Set(v.ScreenReader)
@@ -347,6 +350,12 @@ func (e *Env) FontScale() float32 { return e.fontScale.Get() }
 
 // ReduceMotion reports whether the user asked for less motion.
 func (e *Env) ReduceMotion() bool { return e.reduce.Get() }
+
+// HardwareKeyboard reports whether a physical keyboard is attached to the
+// phone or tablet, a Bluetooth or USB keyboard or a keyboard case, and
+// changes as one connects or goes. iOS, iPadOS and Android report it;
+// elsewhere it is false.
+func (e *Env) HardwareKeyboard() bool { return e.hardKeyboard.Get() }
 
 // IncreaseContrast reports whether the user asked the system for stronger contrast, such as macOS Increase Contrast or a Windows contrast theme.
 func (e *Env) IncreaseContrast() bool { return e.contrast.Get() }

@@ -272,6 +272,8 @@ core.View{
 
 A game or a canvas polls the keys instead. `core.KeysDown(cx)` lists the keys held on the window and `core.KeyHeld(cx, "left")` says whether one is: tracked reads, which a `RequestAnimationFrame` loop reads too. The first read has the platform report every key from then on, so a key already held stays unknown until it is pressed again; keys typed into a field or a web view, or while an input method composes, are never held, and a key still held as the window loses the focus comes up then. They work where `OnKeyUp` does and on iPhone and iPad with a hardware keyboard.
 
+`cx.Env().HardwareKeyboard()` says whether a physical keyboard, Bluetooth, USB or a keyboard case, is attached to an iPhone, iPad or Android device, and changes as one connects or goes, so an app can trade its on-screen controls for the keys. Elsewhere it is false.
+
 ```go
 var loop func(time.Time)
 loop = func(time.Time) {
