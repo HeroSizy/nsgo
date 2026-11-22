@@ -20,7 +20,7 @@ type KeyEvent struct {
 
 // KeysDown returns the names of the keys held on cx's window, sorted, as KeyEvent.Key names them: "shift" for either Shift, "left", "space", "a". It is a tracked read, so what reads it renders again as a key goes down or comes up but not as a held key repeats, and a RequestAnimationFrame callback, which runs untracked, reads the same keys, as a game's frame loop polls them. A key held as the window loses the keyboard focus comes up then.
 //
-// The first read on a window asks its platform for every key, not only those a focused view that hears keys (View.OnKeyDown) has, and that stays on for the life of the window; a key already held then is unknown until it is pressed again. Keys typed while a text input or a web view has the focus, or while an input method composes, are never held. macOS, Windows, Linux, the web and iOS with a hardware keyboard report them; Android, HarmonyOS, watchOS and mini programs do not, so none is ever held there.
+// The first read on a window asks its platform for every key, not only those a focused view that hears keys (View.OnKeyDown) has, and that stays on for the life of the window; a key already held then is unknown until it is pressed again. Keys typed while a text input or a web view has the focus, or while an input method composes, are never held. macOS, Windows, Linux, the web, and iOS and Android with a hardware keyboard report them; HarmonyOS, watchOS and mini programs do not, so none is ever held there.
 func KeysDown(cx *Scope) []string {
 	t := cx.tree()
 	if t == nil {

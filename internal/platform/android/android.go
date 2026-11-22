@@ -1502,6 +1502,8 @@ func encode(w *writer, b *driver.MountBatch, first bool, requests []uint32, nati
 				// The ID EventKey reports when the binding fires.
 				w.u32(k.ID)
 			}
+			// Whether to report every key going down and up, for core.KeysDown.
+			w.flags(it.HeldKeys)
 		case driver.ItemStatusBar:
 			c := it.StatusBar
 			w.byte(byte(c.Style))

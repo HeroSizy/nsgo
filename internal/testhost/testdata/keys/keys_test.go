@@ -345,10 +345,10 @@ func TestNoKeyStaysHeldIntoTheNextTest(t *testing.T) {
 	})
 }
 
-// core.KeysDown follows a hardware keyboard's keys on iPhone and iPad, where no view hears them go down, as on every platform that reports keys (#1046).
+// core.KeysDown follows a hardware keyboard's keys on iPhone, iPad and Android, where no view hears them go down, as on every platform that reports keys (#1046).
 func TestKeysDownFollowsAHardwareKeyboard(t *testing.T) {
 	switch nsgotest.Target() {
-	case "", "ios", "ios_simulator":
+	case "", "ios", "ios_simulator", "android":
 	default:
 		t.Skip("TestAFocusedViewHearsItsKeysComeUp reads the keys held here")
 	}

@@ -231,6 +231,10 @@ public class NsgoView extends FrameLayout implements NsgoEngine.Listener {
     /** The keymap's binding IDs, which EventKey reports. */
     private int[] keyIds = new int[0];
     private final Set<Integer> consumedKeys = new HashSet<>();
+    /** ITEM_KEYMAP's held keys: report every key going down and up, for core.KeysDown. */
+    private boolean heldKeys;
+    /** The keys reported down, by key code, with the name the down reported. */
+    private final java.util.Map<Integer, String> held = new java.util.HashMap<>();
     private int statusBarStyle;
     private boolean statusBarHidden;
     // statusBarImmersive hides the navigation bar too, until a swipe.
@@ -461,6 +465,7 @@ public class NsgoView extends FrameLayout implements NsgoEngine.Listener {
     @Override
     public void onWindowFocusChanged(boolean hasFocus) {
         super.onWindowFocusChanged(hasFocus);
+        if (!hasFocus) releaseHeldKeys();
         environment();
         if (hasFocus && overlays != null) overlays.returned();
         // The user may have changed RECORD_AUDIO in the system's settings; the first view tells the app.
@@ -2972,6 +2977,7 @@ public class NsgoView extends FrameLayout implements NsgoEngine.Listener {
                 keys = bindings;
                 keyFlags = flags;
                 keyIds = ids;
+                heldKeys = in.readUnsignedByte() != 0;
                 break;
             }
             case Protocol.ITEM_STATUS_BAR:
@@ -4040,7 +4046,48 @@ public class NsgoView extends FrameLayout implements NsgoEngine.Listener {
     public boolean dispatchKeyEvent(KeyEvent e) {
         // A key the window delivers is the keyboard's input. An IME's action or committed Return, which a field offers to keyBinding, leaves the modality, as a software Return does on iOS.
         if (e.getAction() == KeyEvent.ACTION_DOWN && !KeyEvent.isModifierKey(e.getKeyCode())) modality(Protocol.MODALITY_KEYBOARD);
-        return keyBinding(e) || super.dispatchKeyEvent(e);
+        if (keyBinding(e)) return true;
+        heldKey(e);
+        return super.dispatchKeyEvent(e);
+    }
+
+    /**
+     * Reports a key the keymap left going down or up, with no view, while
+     * the app asks for held keys (driver.EventKeyDown with ID 0): not one
+     * typed into a text field or web view, nor a held key's repeats.
+     */
+    private void heldKey(KeyEvent e) {
+        int code = e.getKeyCode();
+        if (e.getAction() == KeyEvent.ACTION_UP) {
+            String name = held.remove(code);
+            if (name != null) event(Protocol.EVENT_KEY_UP, 0, 0, 0, 0, name, 0, 0, 0, 0, 0, 0, 0, null, 0, 0, false, "", false, 0, 0, modifiers(e.getMetaState()));
+            return;
+        }
+        if (e.getAction() != KeyEvent.ACTION_DOWN || e.getRepeatCount() > 0 || !heldKeys
+                || (focusKeyUse() & Protocol.KEY_USE_TEXT) != 0) return;
+        String name = heldName(e);
+        if (name == null) return;
+        // Its up never came: report it before the key goes down again.
+        String was = held.put(code, name);
+        if (was != null) event(Protocol.EVENT_KEY_UP, 0, 0, 0, 0, was, 0, 0, 0, 0, 0, 0, 0, null, 0, 0, false, "", false, 0, 0, modifiers(e.getMetaState()));
+        event(Protocol.EVENT_KEY, 0, 0, 0, 0, name, 0, 0, 0, 0, 0, 0, 0, null, 0, 0, false, "", false, 0, 0, modifiers(e.getMetaState()));
+    }
+
+    /** The keys still held come up as the window loses the focus. */
+    private void releaseHeldKeys() {
+        for (String name : held.values()) event(Protocol.EVENT_KEY_UP, 0, 0, 0, 0, name, 0, 0, 0, 0, 0, 0, 0, null, 0, 0, false, "", false, 0, 0, 0);
+        held.clear();
+    }
+
+    /** A key's name as driver.NormalizeKey writes it without modifiers, a modifier alone included. */
+    private static String heldName(KeyEvent e) {
+        switch (e.getKeyCode()) {
+            case KeyEvent.KEYCODE_SHIFT_LEFT: case KeyEvent.KEYCODE_SHIFT_RIGHT: return "shift";
+            case KeyEvent.KEYCODE_CTRL_LEFT: case KeyEvent.KEYCODE_CTRL_RIGHT: return "ctrl";
+            case KeyEvent.KEYCODE_ALT_LEFT: case KeyEvent.KEYCODE_ALT_RIGHT: return "alt";
+            case KeyEvent.KEYCODE_META_LEFT: case KeyEvent.KEYCODE_META_RIGHT: return "meta";
+            default: return keyName(e);
+        }
     }
 
     /** The one matcher for hardware keys and Return delivered through an IME. */

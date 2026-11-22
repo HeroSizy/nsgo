@@ -270,7 +270,7 @@ core.View{
 }
 ```
 
-游戏或画布则轮询按键。`core.KeysDown(cx)` 列出窗口上按住的键，`core.KeyHeld(cx, "left")` 判断某个键是否按住：二者都是被追踪的读取，`RequestAnimationFrame` 循环也能读取。第一次读取后，平台从此报告每个键，所以读取前已经按住的键要再按一次才会知道；在文本框或网页视图中、或输入法组字时按下的键永远不算按住，窗口失去焦点时仍按住的键会在那时抬起。它们在 `OnKeyUp` 可用的地方都可用，在接了硬件键盘的 iPhone 和 iPad 上也可用。
+游戏或画布则轮询按键。`core.KeysDown(cx)` 列出窗口上按住的键，`core.KeyHeld(cx, "left")` 判断某个键是否按住：二者都是被追踪的读取，`RequestAnimationFrame` 循环也能读取。第一次读取后，平台从此报告每个键，所以读取前已经按住的键要再按一次才会知道；在文本框或网页视图中、或输入法组字时按下的键永远不算按住，窗口失去焦点时仍按住的键会在那时抬起。它们在 `OnKeyUp` 可用的地方都可用，在接了硬件键盘的 iPhone、iPad 和 Android 设备上也可用。
 
 `cx.Env().HardwareKeyboard()` 说明 iPhone、iPad 或 Android 设备是否接了实体键盘（蓝牙、USB 或键盘保护套），键盘接上或拔下时随之变化，app 可以据此用按键代替屏幕上的控件。其他平台上它为 false。
 
